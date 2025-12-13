@@ -37,6 +37,47 @@ providers.push(
           throw new Error('البريد الإلكتروني وكلمة المرور مطلوبان');
         }
 
+        // Check if it's admin credentials from .env
+        const adminEmail = process.env.ADMIN_EMAIL;
+        const adminPassword = process.env.ADMIN_PASSWORD;
+        
+        if (adminEmail && adminPassword && 
+            credentials.email.toLowerCase() === adminEmail.toLowerCase() &&
+            credentials.password === adminPassword) {
+          // Admin login - check if admin user exists, create if not
+          await connectDB();
+          
+          let adminUser = await User.findOne({ email: adminEmail.toLowerCase() });
+          
+          if (!adminUser) {
+            // Create admin user if doesn't exist
+            const hashedPassword = await bcrypt.hash(adminPassword, 10);
+            adminUser = await User.create({
+              name: 'Admin',
+              email: adminEmail.toLowerCase(),
+              password: hashedPassword,
+              provider: 'credentials',
+              emailVerified: true, // Admin is auto-verified
+            });
+          } else {
+            // Update admin user to ensure it's verified and has correct provider
+            if (!adminUser.emailVerified || adminUser.provider !== 'credentials') {
+              await User.findByIdAndUpdate(adminUser._id, {
+                emailVerified: true,
+                provider: 'credentials',
+              });
+            }
+          }
+          
+          return {
+            id: adminUser._id.toString(),
+            email: adminUser.email,
+            name: adminUser.name || 'Admin',
+            image: adminUser.image,
+          };
+        }
+
+        // Regular user login
         await connectDB();
 
         const user = await User.findOne({ email: credentials.email }).select('+password');

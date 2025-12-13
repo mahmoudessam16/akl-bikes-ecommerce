@@ -3,9 +3,47 @@ import productsData from '@/mock/products.json';
 import categoriesData from '@/mock/categories.json';
 
 export const getProducts = async (): Promise<Product[]> => {
-  // In production, this would be an API call
-  // For now, return mock data
-  return productsData as unknown as Product[];
+  // Check if we're in a server environment
+  if (typeof window === 'undefined') {
+    try {
+      // Use direct database access in server components
+      const { default: connectDB } = await import('@/db/mongoose');
+      const Product = (await import('@/models/Product')).default;
+      await connectDB();
+      const products = await Product.find().sort({ createdAt: -1 }).lean();
+      return products.map((p: any) => ({
+        id: p.id,
+        sku: p.sku,
+        title_ar: p.title_ar,
+        title_en: p.title_en,
+        slug: p.slug,
+        price: p.price,
+        stock: p.stock,
+        primary_category: p.primary_category,
+        images: p.images || [],
+        attributes: p.attributes || {},
+        description_ar: p.description_ar,
+        description_en: p.description_en,
+        variants: p.variants || [],
+      })) as Product[];
+    } catch (error) {
+      console.error('Error fetching products from database:', error);
+      // Fallback to mock data
+      return productsData as unknown as Product[];
+    }
+  } else {
+    // Client-side: use API
+    try {
+      const res = await fetch('/api/products');
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (error) {
+      console.error('Error fetching products from API:', error);
+    }
+    // Fallback to mock data
+    return productsData as unknown as Product[];
+  }
 };
 
 export const getProductBySlug = async (slug: string): Promise<Product | null> => {
@@ -14,8 +52,57 @@ export const getProductBySlug = async (slug: string): Promise<Product | null> =>
 };
 
 export const getCategories = async (): Promise<Category[]> => {
-  // In production, this would be an API call
-  return categoriesData as unknown as Category[];
+  // Check if we're in a server environment
+  if (typeof window === 'undefined') {
+    try {
+      // Use direct database access in server components
+      const { default: connectDB } = await import('@/db/mongoose');
+      const Category = (await import('@/models/Category')).default;
+      await connectDB();
+      const categories = await Category.find().sort({ createdAt: -1 }).lean();
+      
+      // Transform to match frontend structure (with children)
+      const mainCategories = categories.filter((c: any) => !c.parentId);
+      const childCategories = categories.filter((c: any) => c.parentId);
+      
+      return mainCategories.map((main: any) => ({
+        id: main.id,
+        name_ar: main.name_ar,
+        name_en: main.name_en,
+        slug: main.slug,
+        parentId: main.parentId,
+        image: main.image,
+        description_ar: main.description_ar,
+        description_en: main.description_en,
+        children: childCategories
+          .filter((child: any) => child.parentId === main.id)
+          .map((child: any) => ({
+            id: child.id,
+            name_ar: child.name_ar,
+            name_en: child.name_en,
+            slug: child.slug,
+            parentId: child.parentId,
+            image: child.image,
+          })),
+      })) as Category[];
+    } catch (error) {
+      console.error('Error fetching categories from database:', error);
+      // Fallback to mock data
+      return categoriesData as unknown as Category[];
+    }
+  } else {
+    // Client-side: use API
+    try {
+      const res = await fetch('/api/categories');
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (error) {
+      console.error('Error fetching categories from API:', error);
+    }
+    // Fallback to mock data
+    return categoriesData as unknown as Category[];
+  }
 };
 
 export const getCategoryBySlug = async (slug: string): Promise<Category | null> => {

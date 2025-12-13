@@ -8,11 +8,11 @@ interface CategoryCardProps {
 }
 
 export function CategoryCard({ category }: CategoryCardProps) {
-  const locale = 'ar'; // TODO: Get from context
+  const locale = 'ar';
 
   return (
-    <Link href={`/${locale}/category/${category.slug}`}>
-      <Card className="group overflow-hidden hover:shadow-lg transition-shadow">
+    <Link href={`/${locale}/category/${category.slug}`} className="block">
+      <Card className="group overflow-hidden hover:shadow-lg hover:shadow-primary/20 hover:border-primary/30 border-2 border-transparent hover-card-scale cursor-pointer">
         <CardContent className="p-0">
           <div className="relative aspect-square w-full overflow-hidden bg-muted">
             {category.image ? (
@@ -20,7 +20,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
                 src={category.image}
                 alt={category.name_ar}
                 fill
-                className="object-cover transition-transform group-hover:scale-105"
+                className="object-cover hover-image-zoom"
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
               />
             ) : (

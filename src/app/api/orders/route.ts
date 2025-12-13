@@ -3,6 +3,7 @@ import { auth } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/db/mongoose';
 import Order from '@/models/Order';
 import User from '@/models/User';
+import Product from '@/models/Product';
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,6 +49,21 @@ export async function POST(request: NextRequest) {
         { error: 'المستخدم غير موجود' },
         { status: 404 }
       );
+    }
+
+    // Decrease stock for each item
+    for (const item of items) {
+      const product = await Product.findOne({ id: item.productId });
+      if (product) {
+        if (product.stock < item.quantity) {
+          return NextResponse.json(
+            { error: `المخزون غير كافي للمنتج: ${item.title_ar}` },
+            { status: 400 }
+          );
+        }
+        product.stock -= item.quantity;
+        await product.save();
+      }
     }
 
     // Generate unique order number

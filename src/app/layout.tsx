@@ -1,9 +1,7 @@
-// Root layout for metadata and other global settings
-// The actual layout with locale support is in [locale]/layout.tsx
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Bike Store",
+  title: "AKL Bicycles - عقل للدراجات الهوائية",
   description: "Bike Store E-commerce Application",
 };
 

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { NavbarServer } from '@/components/navbar-server';
+import { FooterServer } from '@/components/footer-server';
 import { CategoryPageClient } from '@/components/category-page-client';
 import {
   getCategoryBySlug,
@@ -34,7 +34,7 @@ export default async function CategoryPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar />
+      <NavbarServer />
       <main className="flex-1 container mx-auto px-4 py-8">
         <CategoryPageClient
           category={category}
@@ -45,7 +45,7 @@ export default async function CategoryPage({
           currentSort={sort}
         />
       </main>
-      <Footer />
+      <FooterServer />
     </div>
   );
 }

@@ -6,9 +6,9 @@
 
 export const theme = {
   colors: {
-    primary: '#3B82F6', // Temporary primary color (blue)
-    secondary: '#10B981', // Temporary secondary color (green)
-    accent: '#F59E0B', // Temporary accent color (amber)
+    primary: '#FF6B35', // Orange primary color matching logo
+    secondary: '#FF8C42', // Orange secondary color
+    accent: '#FF6B35', // Orange accent color matching logo
   },
 } as const;
 

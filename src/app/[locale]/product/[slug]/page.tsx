@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { NavbarServer } from '@/components/navbar-server';
+import { FooterServer } from '@/components/footer-server';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProductDetailsClient } from '@/components/product-details-client';
@@ -21,7 +21,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar />
+      <NavbarServer />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Image Gallery */}
@@ -105,7 +105,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
         </div>
       </main>
-      <Footer />
+      <FooterServer />
     </div>
   );
 }

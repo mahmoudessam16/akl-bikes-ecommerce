@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ShoppingCart } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShoppingCart, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/lib/stores/cart-store';
 import type { Product } from '@/types';
@@ -12,6 +13,7 @@ interface ProductDetailsClientProps {
 
 export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
+  const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
 
   const handleAddToCart = () => {
@@ -31,6 +33,14 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
       variantName: variant?.name_ar,
       maxStock: stock,
     });
+  };
+
+  const handleBuyNow = () => {
+    // Add to cart first
+    handleAddToCart();
+    
+    // Navigate to checkout
+    router.push('/ar/checkout');
   };
 
   const isOutOfStock = selectedVariant
@@ -64,15 +74,27 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
         </div>
       )}
 
-      <Button
-        onClick={handleAddToCart}
-        disabled={isOutOfStock}
-        size="lg"
-        className="w-full"
-      >
-        <ShoppingCart className="h-5 w-5 ml-2 rtl:ml-0 rtl:mr-2" />
-        {isOutOfStock ? 'نفدت الكمية' : 'أضف للسلة'}
-      </Button>
+      <div className="flex gap-3">
+        <Button
+          onClick={handleAddToCart}
+          disabled={isOutOfStock}
+          variant="outline"
+          size="lg"
+          className="flex-1 cursor-pointer !transition-all !duration-300 hover:!bg-primary hover:!text-primary-foreground hover:!border-primary hover:!shadow-md hover:!scale-105 active:!scale-100" 
+        >
+          <ShoppingCart className="h-5 w-5 ml-2 rtl:ml-0 rtl:mr-2" />
+          {isOutOfStock ? 'نفدت الكمية' : 'أضف للسلة'}
+        </Button>
+        <Button
+          onClick={handleBuyNow}
+          disabled={isOutOfStock}
+          size="lg"
+          className="flex-1 cursor-pointer !transition-all !duration-300 hover:!bg-transparent hover:!text-primary hover:!border-2 hover:!border-primary hover:!shadow-md hover:!scale-105 active:!scale-100"
+        >
+          <Zap className="h-5 w-5 ml-2 rtl:ml-0 rtl:mr-2" />
+          شراء الآن
+        </Button>
+      </div>
     </div>
   );
 }

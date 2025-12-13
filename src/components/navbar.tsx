@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
-import { Menu, ShoppingCart, ChevronDown, User, LogOut, Package } from 'lucide-react';
+import { Menu, ShoppingCart, ChevronDown, User, LogOut, Package, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -32,9 +32,11 @@ import type { Category } from '@/types';
 export function Navbar() {
   const { data: session, status: sessionStatus } = useSession();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [logoUrl, setLogoUrl] = useState('/imgs/logo-light.PNG');
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
+  const [isAdmin, setIsAdmin] = useState(false);
   const itemCount = useCartStore((state) => state.getItemCount());
 
   const handleSignOut = async () => {
@@ -45,26 +47,81 @@ export function Navbar() {
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    getCategories().then(setCategories);
-  }, []);
+  const checkAdmin = async () => {
+    if (!session?.user) {
+      setIsAdmin(false);
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/check');
+      const data = await res.json();
+      setIsAdmin(data.isAdmin || false);
+    } catch (error) {
+      setIsAdmin(false);
+    }
+  };
+
+  const fetchLogo = async () => {
+    try {
+      const res = await fetch('/api/admin/settings?key=logo_url');
+      const data = await res.json();
+      if (data.value) {
+        setLogoUrl(data.value);
+      }
+    } catch (error) {
+      console.error('Error fetching logo:', error);
+    }
+  };
 
   // Prevent hydration mismatch by only showing auth UI after mount
   const showAuth = isMounted && sessionStatus !== 'loading';
 
+  useEffect(() => {
+    getCategories().then(setCategories);
+    fetchLogo();
+    
+    // Listen for updates
+    const handleCategoriesUpdate = () => {
+      getCategories().then(setCategories);
+    };
+    const handleLogoUpdate = () => {
+      fetchLogo();
+    };
+    
+    window.addEventListener('categoriesUpdated', handleCategoriesUpdate);
+    window.addEventListener('logoUpdated', handleLogoUpdate);
+    
+    return () => {
+      window.removeEventListener('categoriesUpdated', handleCategoriesUpdate);
+      window.removeEventListener('logoUpdated', handleLogoUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (showAuth && session?.user) {
+      checkAdmin();
+    } else {
+      setIsAdmin(false);
+    }
+  }, [showAuth, session]);
+
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav 
+      className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      suppressHydrationWarning
+    >
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/ar" className="flex items-center space-x-2 rtl:space-x-reverse">
             <Image
-              src="/imgs/logo.PNG"
+              src={logoUrl}
               alt="Logo"
               width={180}
               height={60}
               className="h-14 w-auto object-contain"
               priority
+              suppressHydrationWarning
             />
           </Link>
 
@@ -80,7 +137,7 @@ export function Navbar() {
                 كل المنتجات
               </Button>
             </Link>
-            {categories.map((category) => (
+            {isMounted && categories.length > 0 && categories.map((category) => (
               <Popover
                 key={category.id}
                 open={openPopovers[category.id]}
@@ -103,7 +160,7 @@ export function Navbar() {
                       <Link
                         key={child.id}
                         href={`/ar/category/${child.slug}`}
-                        className="block px-3 py-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                        className="block px-3 py-2 text-sm rounded-md hover:bg-primary/10 hover:text-primary transition-colors duration-200"
                         onClick={() =>
                           setOpenPopovers((prev) => ({
                             ...prev,
@@ -126,7 +183,7 @@ export function Navbar() {
           </div>
 
           {/* Right side - Auth, Cart and Menu */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4" suppressHydrationWarning>
             {showAuth && session?.user ? (
               <>
                 <Link href="/ar/cart" className="cursor-pointer">
@@ -164,6 +221,14 @@ export function Navbar() {
                       <p className="text-xs text-muted-foreground">{session.user.email}</p>
                     </div>
                     <DropdownMenuSeparator />
+                    {isAdmin && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/ar/admin" className="flex items-center cursor-pointer rtl:flex-row-reverse">
+                          <LayoutDashboard className="ml-2 h-4 w-4 rtl:ml-2 rtl:mr-2" />
+                          <span>لوحة التحكم</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
                       <Link href="/ar/orders" className="flex items-center cursor-pointer rtl:flex-row-reverse">
                         <Package className="ml-2 h-4 w-4 rtl:ml-2 rtl:mr-2" />
@@ -212,7 +277,13 @@ export function Navbar() {
                     )}
                   </Button>
                 </Link>
-                <div className="w-24 h-9" /> {/* Placeholder for login button to prevent layout shift */}
+                {showAuth ? (
+                  <Link href="/ar/auth/signin">
+                    <Button variant="outline" className="cursor-pointer">تسجيل الدخول</Button>
+                  </Link>
+                ) : (
+                  <div className="w-24 h-9"></div>
+                )}
               </>
             )}
 
@@ -229,21 +300,31 @@ export function Navbar() {
                   <SheetTitle>القائمة</SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col gap-4 mt-4">
+                  {showAuth && session?.user && isAdmin && (
+                    <Link
+                      href="/ar/admin"
+                      onClick={() => setIsOpen(false)}
+                      className="text-base font-medium transition-colors hover:text-primary duration-200 py-2 border-b pb-4 flex items-center gap-2"
+                    >
+                      <LayoutDashboard className="h-5 w-5" />
+                      لوحة التحكم
+                    </Link>
+                  )}
                   <Link
                     href="/ar/products"
                     onClick={() => setIsOpen(false)}
-                    className="text-base font-medium transition-colors hover:text-primary py-2 border-b pb-4"
+                    className="text-base font-medium transition-colors hover:text-primary duration-200 py-2 border-b pb-4"
                   >
                     كل المنتجات
                   </Link>
                   <Link
                     href="/ar/about"
                     onClick={() => setIsOpen(false)}
-                    className="text-base font-medium transition-colors hover:text-primary py-2 border-b pb-4"
+                    className="text-base font-medium transition-colors hover:text-primary duration-200 py-2 border-b pb-4"
                   >
                     من نحن
                   </Link>
-                  {categories.map((category) => (
+                  {isMounted && categories.length > 0 && categories.map((category) => (
                     <div key={category.id} className="space-y-2">
                       <div className="font-semibold text-lg">{category.name_ar}</div>
                       <div className="flex flex-col gap-2 pr-4">
@@ -252,7 +333,7 @@ export function Navbar() {
                             key={child.id}
                             href={`/ar/category/${child.slug}`}
                             onClick={() => setIsOpen(false)}
-                            className="text-base font-medium transition-colors hover:text-primary py-1"
+                            className="text-base font-medium transition-colors hover:text-primary duration-200 py-1"
                           >
                             {child.name_ar}
                           </Link>

@@ -53,15 +53,15 @@ export function ProductCard({ product }: ProductCardProps) {
   const isOutOfStock = product.stock === 0;
 
   return (
-    <Link href={`/${locale}/product/${product.slug}`}>
-      <Card className="group overflow-hidden hover:shadow-lg transition-shadow">
+    <Link href={`/${locale}/product/${product.slug}`} className="block">
+      <Card className="group overflow-hidden hover:shadow-lg hover:shadow-primary/20 hover:border-primary/30 border-2 border-transparent hover-card-scale cursor-pointer">
         <CardHeader className="p-0">
           <div className="relative aspect-square w-full overflow-hidden bg-muted">
             <Image
               src={product.images[0] || '/imgs/bike-(1).jpeg'}
               alt={product.title_ar}
               fill
-              className="object-cover transition-transform group-hover:scale-105"
+              className="object-cover hover-image-zoom"
               sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
             />
             {isOutOfStock && (
@@ -101,7 +101,7 @@ export function ProductCard({ product }: ProductCardProps) {
             onClick={handleAddToCart}
             disabled={isOutOfStock}
             variant="outline"
-            className="flex-1 cursor-pointer"
+            className="flex-1 cursor-pointer !transition-all !duration-300 hover:!bg-primary hover:!text-primary-foreground hover:!border-primary hover:!shadow-md hover:!scale-105 active:!scale-100"
             size="sm"
           >
             <ShoppingCart className="h-4 w-4 ml-2 rtl:ml-0 rtl:mr-2" />
@@ -110,7 +110,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <Button
             onClick={handleBuyNow}
             disabled={isOutOfStock}
-            className="flex-1 cursor-pointer"
+            className="flex-1 cursor-pointer !transition-all !duration-300 hover:!bg-transparent hover:!text-primary hover:!border-2 hover:!border-primary hover:!shadow-md hover:!scale-105 active:!scale-100"
             size="sm"
           >
             <Zap className="h-4 w-4 ml-2 rtl:ml-0 rtl:mr-2" />

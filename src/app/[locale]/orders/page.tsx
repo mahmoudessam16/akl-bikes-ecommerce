@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
+import { NavbarServer } from '@/components/navbar-server';
+import { FooterServer } from '@/components/footer-server';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -92,13 +92,13 @@ export default function OrdersPage() {
   if (sessionStatus === 'loading' || isLoading) {
     return (
       <div className="flex min-h-screen flex-col">
-        <Navbar />
+        <NavbarServer />
         <main className="flex-1 container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         </main>
-        <Footer />
+        <FooterServer />
       </div>
     );
   }

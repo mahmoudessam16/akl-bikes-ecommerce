@@ -5,6 +5,7 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { AuthProvider } from '@/components/auth-provider';
+import { Toaster } from 'sonner';
 import "../globals.css";
 
 const geistSans = Geist({
@@ -18,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bike Store",
+  title: "AKL Bicycles - عقل للدراجات الهوائية",
   description: "Bike Store E-commerce Application",
 };
 
@@ -48,13 +49,14 @@ export default async function RootLayout({
   const dir = locale === 'ar' ? 'rtl' : 'ltr';
 
   return (
-    <html lang={locale} dir={dir} className="dark">
+    <html lang={locale} dir={dir}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
           <NextIntlClientProvider messages={messages}>
             {children}
+            <Toaster position="top-center" richColors />
           </NextIntlClientProvider>
         </AuthProvider>
       </body>

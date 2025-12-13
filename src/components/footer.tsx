@@ -1,11 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { MapPin, ExternalLink } from 'lucide-react';
 
-export function Footer() {
-  const storePhone = process.env.NEXT_PUBLIC_STORE_PHONE || '+966501234567';
-  const phoneDisplay = storePhone.replace(/[^0-9+]/g, '').replace(/(\d{3})(\d{2})(\d{3})(\d{4})/, '+$1 $2 $3 $4');
-  const phoneNumber = storePhone.replace(/[^0-9]/g, '');
+interface FooterClientProps {
+  contactInfo: {
+    phone: string;
+    email: string;
+    address: string;
+    googleMapsUrl: string;
+  };
+}
+
+export function FooterClient({ contactInfo }: FooterClientProps) {
+  const phoneNumber = contactInfo.phone.replace(/[^0-9]/g, '');
   const whatsappLink = `https://wa.me/${phoneNumber}`;
 
   return (
@@ -22,17 +30,17 @@ export function Footer() {
             <h3 className="font-semibold text-lg mb-4">روابط سريعة</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/ar/about" className="text-muted-foreground hover:text-foreground">
+                <Link href="/ar/about" className="text-muted-foreground hover:text-primary transition-colors duration-200">
                   من نحن
                 </Link>
               </li>
               <li>
-                <Link href="/ar/contact" className="text-muted-foreground hover:text-foreground">
+                <Link href="/ar/contact" className="text-muted-foreground hover:text-primary transition-colors duration-200">
                   اتصل بنا
                 </Link>
               </li>
               <li>
-                <Link href="/ar/cart" className="text-muted-foreground hover:text-foreground">
+                <Link href="/ar/cart" className="text-muted-foreground hover:text-primary transition-colors duration-200">
                   السلة
                 </Link>
               </li>
@@ -49,10 +57,33 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="text-primary hover:underline transition-colors"
                 >
-                  {phoneDisplay}
+                  {contactInfo.phone}
                 </a>
               </li>
-              <li>البريد: info@bikestore.com</li>
+              <li>
+                البريد:{' '}
+                <a
+                  href={`mailto:${contactInfo.email}`}
+                  className="text-primary hover:underline transition-colors"
+                >
+                  {contactInfo.email}
+                </a>
+              </li>
+              <li className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span className="flex-1">
+                  <span className="block whitespace-pre-line mb-1">{contactInfo.address}</span>
+                  <a
+                    href={contactInfo.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline transition-colors inline-flex items-center gap-1 text-xs"
+                  >
+                    عرض على الخريطة
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </span>
+              </li>
             </ul>
           </div>
         </div>
