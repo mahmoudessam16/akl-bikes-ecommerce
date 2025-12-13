@@ -37,13 +37,16 @@ providers.push(
           throw new Error('البريد الإلكتروني وكلمة المرور مطلوبان');
         }
 
+        const email = typeof credentials.email === 'string' ? credentials.email : String(credentials.email);
+        const password = typeof credentials.password === 'string' ? credentials.password : String(credentials.password);
+
         // Check if it's admin credentials from .env
         const adminEmail = process.env.ADMIN_EMAIL;
         const adminPassword = process.env.ADMIN_PASSWORD;
         
         if (adminEmail && adminPassword && 
-            credentials.email.toLowerCase() === adminEmail.toLowerCase() &&
-            credentials.password === adminPassword) {
+            email.toLowerCase() === adminEmail.toLowerCase() &&
+            password === adminPassword) {
           // Admin login - check if admin user exists, create if not
           await connectDB();
           
@@ -80,7 +83,7 @@ providers.push(
         // Regular user login
         await connectDB();
 
-        const user = await User.findOne({ email: credentials.email }).select('+password');
+        const user = await User.findOne({ email: email }).select('+password');
 
         if (!user) {
           throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
@@ -99,7 +102,7 @@ providers.push(
         }
         
         // @ts-ignore - user.password is checked above
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+        const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
           throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة');

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { signOut, Session } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
+import type { Session } from 'next-auth';
 import { Menu, ShoppingCart, ChevronDown, User, LogOut, Package, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {

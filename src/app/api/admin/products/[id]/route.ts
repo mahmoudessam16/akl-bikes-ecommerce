@@ -56,7 +56,7 @@ export async function PUT(
     // Update fields
     Object.keys(body).forEach(key => {
       if (body[key] !== undefined && key !== 'id') {
-        product[key] = body[key];
+        (product as any)[key] = body[key];
       }
     });
     
