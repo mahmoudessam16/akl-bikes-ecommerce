@@ -16,14 +16,13 @@ async function getContactInfo() {
     });
 
     return {
-      phone: info.phone || '+966 50 123 4567',
-      email: info.email || 'info@bikestore.com',
-      address: info.address || 'المملكة العربية السعودية\nالرياض، حي العليا\nشارع الملك فهد',
-      workingHours: info.working_hours || 'السبت - الخميس: 9:00 ص - 9:00 م\nالجمعة: 2:00 م - 9:00 م',
-      googleMapsUrl: info.google_maps_url || 'https://maps.app.goo.gl/jDiErmUTh2nqXRLBA?g_st=aw',
+      phone: info.phone,
+      email: info.email,
+      address: info.address,
+      workingHours: info.working_hours,
+      googleMapsUrl: info.google_maps_url,
     };
   } catch (error) {
-    console.error('Error fetching contact info:', error);
     return {
       phone: '+966 50 123 4567',
       email: 'info@bikestore.com',

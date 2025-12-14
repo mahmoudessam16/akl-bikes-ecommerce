@@ -10,6 +10,15 @@ export interface IProductVariant {
   attributes: Record<string, string | number>;
 }
 
+export interface IProductColor {
+  id: string;
+  name_ar: string;
+  name_en?: string;
+  image: string;
+  stock: number;
+  available: boolean;
+}
+
 export interface IProduct extends Document {
   id: string;
   sku: string;
@@ -24,6 +33,7 @@ export interface IProduct extends Document {
   description_ar?: string;
   description_en?: string;
   variants?: IProductVariant[];
+  colors?: IProductColor[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +45,15 @@ const ProductVariantSchema = new Schema<IProductVariant>({
   price_modifier: { type: Number },
   stock: { type: Number, required: true, default: 0 },
   attributes: { type: Schema.Types.Mixed, default: {} },
+});
+
+const ProductColorSchema = new Schema<IProductColor>({
+  id: { type: String, required: true },
+  name_ar: { type: String, required: true },
+  name_en: { type: String },
+  image: { type: String, required: true },
+  stock: { type: Number, required: true, default: 0 },
+  available: { type: Boolean, required: true, default: true },
 });
 
 const ProductSchema = new Schema<IProduct>(
@@ -92,6 +111,10 @@ const ProductSchema = new Schema<IProduct>(
     },
     variants: {
       type: [ProductVariantSchema],
+      default: [],
+    },
+    colors: {
+      type: [ProductColorSchema],
       default: [],
     },
   },

@@ -25,12 +25,13 @@ export async function GET(request: NextRequest) {
           slug: child.slug,
           parentId: child.parentId,
           image: child.image,
+          description_ar: child.description_ar,
+          description_en: child.description_en,
         })),
     }));
     
     return NextResponse.json(categoriesWithChildren, { status: 200 });
   } catch (error: any) {
-    console.error('Get categories error:', error);
     return NextResponse.json(
       { error: error.message || 'حدث خطأ أثناء جلب الفئات' },
       { status: 500 }
@@ -102,7 +103,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error('Create category error:', error);
     return NextResponse.json(
       { error: error.message || 'حدث خطأ أثناء إنشاء الفئة' },
       { status: 500 }

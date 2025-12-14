@@ -21,7 +21,6 @@ async function getContactInfo() {
       googleMapsUrl: info.google_maps_url || 'https://maps.app.goo.gl/jDiErmUTh2nqXRLBA?g_st=aw',
     };
   } catch (error) {
-    console.error('Error fetching contact info:', error);
     return {
       phone: '+966 50 123 4567',
       email: 'info@bikestore.com',

@@ -225,7 +225,6 @@ function SignInForm() {
         redirect: true,
       });
     } catch (err: any) {
-      console.error('Google sign in error:', err);
       setError(err?.message || 'حدث خطأ أثناء تسجيل الدخول مع Google. تأكد من إعدادات Google OAuth في ملف .env.local');
       setIsLoading(false);
     }

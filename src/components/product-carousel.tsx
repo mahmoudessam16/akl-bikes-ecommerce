@@ -1,8 +1,14 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import { ProductCard } from './product-card';
 import type { Product } from '@/types';
+
+// Lazy load framer-motion to reduce initial bundle size
+const MotionDiv = dynamic(
+  () => import('framer-motion').then((mod) => mod.motion.div),
+  { ssr: false }
+);
 
 interface ProductCarouselProps {
   products: Product[];
@@ -16,7 +22,7 @@ export function ProductCarousel({ products, title }: ProductCarouselProps) {
         <h2 className="text-2xl font-bold mb-6 px-4">{title}</h2>
       )}
       <div className="overflow-hidden">
-        <motion.div
+        <MotionDiv
           className="flex gap-4 px-4"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -25,7 +31,7 @@ export function ProductCarousel({ products, title }: ProductCarouselProps) {
         >
           <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
             {products.map((product, index) => (
-              <motion.div
+              <MotionDiv
                 key={product.id}
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -34,10 +40,10 @@ export function ProductCarousel({ products, title }: ProductCarouselProps) {
                 className="min-w-[280px] sm:min-w-[300px]"
               >
                 <ProductCard product={product} />
-              </motion.div>
+              </MotionDiv>
             ))}
           </div>
-        </motion.div>
+        </MotionDiv>
       </div>
     </section>
   );

@@ -46,7 +46,6 @@ export async function POST(request: NextRequest) {
     try {
       await sendVerificationEmail(email, verificationCode);
     } catch (emailError) {
-      console.error('Error sending verification email:', emailError);
       return NextResponse.json(
         { error: 'فشل إرسال البريد الإلكتروني. يرجى المحاولة مرة أخرى' },
         { status: 500 }
@@ -58,7 +57,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Resend verification error:', error);
     return NextResponse.json(
       { error: error.message || 'حدث خطأ أثناء إعادة إرسال رمز التحقق' },
       { status: 500 }

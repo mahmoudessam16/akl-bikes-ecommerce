@@ -57,8 +57,7 @@ export async function POST(request: NextRequest) {
     try {
       await sendVerificationEmail(email, verificationCode);
     } catch (emailError) {
-      console.error('Error sending verification email:', emailError);
-      // Don't fail registration if email fails, but log it
+      // Don't fail registration if email fails
     }
 
     return NextResponse.json(
@@ -69,7 +68,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error('Registration error:', error);
     return NextResponse.json(
       { error: error.message || 'حدث خطأ أثناء إنشاء الحساب' },
       { status: 500 }

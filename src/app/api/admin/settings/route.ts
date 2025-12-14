@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(settingsObj, { status: 200 });
   } catch (error: any) {
-    console.error('Get settings error:', error);
     return NextResponse.json(
       { error: error.message || 'حدث خطأ أثناء جلب الإعدادات' },
       { status: 500 }
@@ -70,7 +69,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Update settings error:', error);
     return NextResponse.json(
       { error: error.message || 'حدث خطأ أثناء تحديث الإعداد' },
       { status: 500 }

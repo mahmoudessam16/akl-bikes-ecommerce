@@ -1,6 +1,4 @@
 import type { Product, Category } from '@/types';
-import productsData from '@/mock/products.json';
-import categoriesData from '@/mock/categories.json';
 
 export const getProducts = async (): Promise<Product[]> => {
   // Check if we're in a server environment
@@ -11,25 +9,46 @@ export const getProducts = async (): Promise<Product[]> => {
       const Product = (await import('@/models/Product')).default;
       await connectDB();
       const products = await Product.find().sort({ createdAt: -1 }).lean();
-      return products.map((p: any) => ({
-        id: p.id,
-        sku: p.sku,
-        title_ar: p.title_ar,
-        title_en: p.title_en,
-        slug: p.slug,
-        price: p.price,
-        stock: p.stock,
-        primary_category: p.primary_category,
-        images: p.images || [],
-        attributes: p.attributes || {},
-        description_ar: p.description_ar,
-        description_en: p.description_en,
-        variants: p.variants || [],
-      })) as Product[];
+      return products.map((p: any) => {
+        // Convert colors and variants to plain objects (remove _id)
+        const colors = (p.colors || []).map((color: any) => ({
+          id: color.id,
+          name_ar: color.name_ar,
+          name_en: color.name_en,
+          image: color.image,
+          stock: color.stock,
+          available: color.available,
+        }));
+        
+        const variants = (p.variants || []).map((variant: any) => ({
+          id: variant.id,
+          name_ar: variant.name_ar,
+          name_en: variant.name_en,
+          price_modifier: variant.price_modifier,
+          stock: variant.stock,
+          attributes: variant.attributes || {},
+        }));
+
+        return {
+          id: p.id,
+          sku: p.sku,
+          title_ar: p.title_ar,
+          title_en: p.title_en,
+          slug: p.slug,
+          price: p.price,
+          stock: p.stock,
+          primary_category: p.primary_category,
+          images: p.images || [],
+          attributes: p.attributes || {},
+          description_ar: p.description_ar,
+          description_en: p.description_en,
+          variants,
+          colors,
+        };
+      }) as Product[];
     } catch (error) {
-      console.error('Error fetching products from database:', error);
-      // Fallback to mock data
-      return productsData as unknown as Product[];
+      // Return empty array if database fails
+      return [];
     }
   } else {
     // Client-side: use API
@@ -39,16 +58,80 @@ export const getProducts = async (): Promise<Product[]> => {
         return await res.json();
       }
     } catch (error) {
-      console.error('Error fetching products from API:', error);
+      // API fetch failed, return empty array
     }
-    // Fallback to mock data
-    return productsData as unknown as Product[];
+    // Return empty array if API fails
+    return [];
   }
 };
 
 export const getProductBySlug = async (slug: string): Promise<Product | null> => {
-  const products = await getProducts();
-  return products.find((p) => p.slug === slug) || null;
+  // Check if we're in a server environment
+  if (typeof window === 'undefined') {
+    try {
+      // Use direct database access - much more efficient
+      const { default: connectDB } = await import('@/db/mongoose');
+      const Product = (await import('@/models/Product')).default;
+      await connectDB();
+      const product = await Product.findOne({ slug }).lean();
+      
+      if (!product) return null;
+      
+      // Convert colors and variants to plain objects (remove _id)
+      const colors = (product.colors || []).map((color: any) => ({
+        id: color.id,
+        name_ar: color.name_ar,
+        name_en: color.name_en,
+        image: color.image,
+        stock: color.stock,
+        available: color.available,
+      }));
+      
+      const variants = (product.variants || []).map((variant: any) => ({
+        id: variant.id,
+        name_ar: variant.name_ar,
+        name_en: variant.name_en,
+        price_modifier: variant.price_modifier,
+        stock: variant.stock,
+        attributes: variant.attributes || {},
+      }));
+
+      return {
+        id: product.id,
+        sku: product.sku,
+        title_ar: product.title_ar,
+        title_en: product.title_en,
+        slug: product.slug,
+        price: product.price,
+        stock: product.stock,
+        primary_category: product.primary_category,
+        images: product.images || [],
+        attributes: product.attributes || {},
+        description_ar: product.description_ar,
+        description_en: product.description_en,
+        variants,
+        colors,
+      } as Product;
+    } catch (error) {
+      // Fallback: fetch all products (less efficient but works)
+      const products = await getProducts();
+      return products.find((p) => p.slug === slug) || null;
+    }
+  } else {
+    // Client-side: use API
+    try {
+      const res = await fetch(`/api/products?slug=${slug}`);
+      if (res.ok) {
+        const data = await res.json();
+        return data.product || null;
+      }
+    } catch (error) {
+      // API fetch failed, try fallback
+    }
+    // Fallback
+    const products = await getProducts();
+    return products.find((p) => p.slug === slug) || null;
+  }
 };
 
 export const getCategories = async (): Promise<Category[]> => {
@@ -86,9 +169,8 @@ export const getCategories = async (): Promise<Category[]> => {
           })),
       })) as Category[];
     } catch (error) {
-      console.error('Error fetching categories from database:', error);
-      // Fallback to mock data
-      return categoriesData as unknown as Category[];
+      // Return empty array if database fails
+      return [];
     }
   } else {
     // Client-side: use API
@@ -98,10 +180,10 @@ export const getCategories = async (): Promise<Category[]> => {
         return await res.json();
       }
     } catch (error) {
-      console.error('Error fetching categories from API:', error);
+      // API fetch failed, return empty array
     }
-    // Fallback to mock data
-    return categoriesData as unknown as Category[];
+    // Return empty array if API fails
+    return [];
   }
 };
 

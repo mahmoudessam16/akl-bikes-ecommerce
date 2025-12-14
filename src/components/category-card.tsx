@@ -20,7 +20,7 @@ export function CategoryCard({ category }: CategoryCardProps) {
                 src={category.image}
                 alt={category.name_ar}
                 fill
-                className="object-cover hover-image-zoom"
+                className="object-contain transition-transform duration-300 group-hover:scale-105"
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
               />
             ) : (

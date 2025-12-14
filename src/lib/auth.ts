@@ -18,10 +18,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       })
     );
   } catch (error) {
-    console.error('Error setting up Google provider:', error);
+    // Error setting up Google provider
   }
-} else {
-  console.warn('Google OAuth credentials not found. Google sign-in will not be available.');
 }
 
 // Always add Credentials provider

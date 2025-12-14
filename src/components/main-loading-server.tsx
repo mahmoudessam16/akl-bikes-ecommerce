@@ -8,7 +8,6 @@ async function getLogoUrl(): Promise<string> {
     const setting = await Settings.findOne({ key: 'logo_url' });
     return setting?.value || '/imgs/logo-light.PNG';
   } catch (error) {
-    console.error('Error fetching logo:', error);
     return '/imgs/logo-light.PNG';
   }
 }

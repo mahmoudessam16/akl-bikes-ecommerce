@@ -13,7 +13,8 @@ import {
   LogOut,
   Menu,
   X,
-  Home
+  Home,
+  ShoppingCart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { signOut } from 'next-auth/react';
@@ -52,7 +53,6 @@ export default function AdminLayout({
         router.push('/ar');
       }
     } catch (error) {
-      console.error('Error checking admin status:', error);
       setIsAdmin(false);
       router.push('/ar');
     } finally {
@@ -80,6 +80,7 @@ export default function AdminLayout({
     { href: '/ar/admin', icon: LayoutDashboard, label: 'لوحة التحكم' },
     { href: '/ar/admin/categories', icon: FolderTree, label: 'الفئات' },
     { href: '/ar/admin/products', icon: Package, label: 'المنتجات' },
+    { href: '/ar/admin/orders', icon: ShoppingCart, label: 'الطلبات' },
     { href: '/ar/admin/settings', icon: Settings, label: 'الإعدادات' },
   ];
 
@@ -88,7 +89,7 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-background admin-layout" dir="rtl">
       {/* Mobile Header */}
       <div className="lg:hidden sticky top-0 z-50 border-b bg-background">
         <div className="flex items-center justify-between p-4">

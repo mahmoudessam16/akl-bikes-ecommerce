@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import type { Session } from 'next-auth';
-import { Menu, ShoppingCart, ChevronDown, User, LogOut, Package, LayoutDashboard } from 'lucide-react';
+import { Menu, ShoppingCart, ChevronDown, ChevronUp, User, LogOut, Package, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -40,6 +40,7 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
   const [isOpen, setIsOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const itemCount = useCartStore((state) => state.getItemCount());
 
   useEffect(() => {
@@ -68,7 +69,7 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
 
   return (
     <nav 
-      className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      className="main-navbar sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
       suppressHydrationWarning
     >
       <div className="container mx-auto px-4">
@@ -110,13 +111,13 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
                 <PopoverTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="flex items-center gap-1 text-base font-medium"
+                    className="flex items-center gap-1 text-base font-medium relative cursor-pointer"
                   >
                     {category.name_ar}
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56 p-2" align="end" sideOffset={8}>
+                <PopoverContent className="w-56 p-2" align="end" side="bottom" sideOffset={8}>
                   <div className="flex flex-col gap-1">
                     {category.children?.map((child) => (
                       <Link
@@ -177,7 +178,7 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
                       )}
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56" sideOffset={8}>
+                  <DropdownMenuContent align="end" className="w-56" side="bottom" sideOffset={8}>
                     <div className="px-2 py-1.5">
                       <p className="text-sm font-medium">{session.user.name}</p>
                       <p className="text-xs text-muted-foreground">{session.user.email}</p>
@@ -266,20 +267,37 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
                     من نحن
                   </Link>
                   {categories.length > 0 && categories.map((category) => (
-                    <div key={category.id} className="space-y-2">
-                      <div className="font-semibold text-lg">{category.name_ar}</div>
-                      <div className="flex flex-col gap-2 pr-4">
-                        {category.children?.map((child) => (
-                          <Link
-                            key={child.id}
-                            href={`/ar/category/${child.slug}`}
-                            onClick={() => setIsOpen(false)}
-                            className="text-base font-medium transition-colors hover:text-primary duration-200 py-1"
-                          >
-                            {child.name_ar}
-                          </Link>
-                        ))}
-                      </div>
+                    <div key={category.id} className="border-b pb-2">
+                      <button
+                        onClick={() =>
+                          setExpandedCategories((prev) => ({
+                            ...prev,
+                            [category.id]: !prev[category.id],
+                          }))
+                        }
+                        className="w-full flex items-center justify-between text-base font-semibold py-2 hover:text-primary transition-colors duration-200"
+                      >
+                        <span>{category.name_ar}</span>
+                        {expandedCategories[category.id] ? (
+                          <ChevronUp className="h-5 w-5" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5" />
+                        )}
+                      </button>
+                      {expandedCategories[category.id] && category.children && (
+                        <div className="flex flex-col gap-2 pr-4 mt-2">
+                          {category.children.map((child) => (
+                            <Link
+                              key={child.id}
+                              href={`/ar/category/${child.slug}`}
+                              onClick={() => setIsOpen(false)}
+                              className="text-sm font-medium transition-colors hover:text-primary duration-200 py-1"
+                            >
+                              {child.name_ar}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -291,4 +309,3 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
     </nav>
   );
 }
-

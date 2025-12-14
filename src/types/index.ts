@@ -1,3 +1,12 @@
+export interface ProductColor {
+  id: string;
+  name_ar: string;
+  name_en?: string;
+  image: string;
+  stock: number;
+  available: boolean;
+}
+
 export interface Product {
   id: string;
   sku: string;
@@ -12,6 +21,7 @@ export interface Product {
   description_ar?: string;
   description_en?: string;
   variants?: ProductVariant[];
+  colors?: ProductColor[];
 }
 
 export interface ProductVariant {
@@ -31,6 +41,7 @@ export interface Category {
   parentId: string | null;
   image?: string;
   description_ar?: string;
+  description_en?: string;
   children?: Category[];
 }
 

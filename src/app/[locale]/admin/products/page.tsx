@@ -51,6 +51,7 @@ export default function ProductsPage() {
     description_ar: '',
     description_en: '',
     variants: [] as any[],
+    colors: [] as Array<{ id: string; name_ar: string; name_en?: string; image: string; stock: number; available: boolean }>,
   });
   const [imageInput, setImageInput] = useState('');
   const [imageSource, setImageSource] = useState<'url' | 'file'>('url');
@@ -58,6 +59,13 @@ export default function ProductsPage() {
   const [attributeKey, setAttributeKey] = useState('');
   const [attributeValue, setAttributeValue] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  // Color management
+  const [colorName, setColorName] = useState('');
+  const [colorImage, setColorImage] = useState('');
+  const [colorStock, setColorStock] = useState(0);
+  const [colorImageSource, setColorImageSource] = useState<'url' | 'file'>('url');
+  const [colorImagePreview, setColorImagePreview] = useState('');
 
   useEffect(() => {
     fetchProducts();
@@ -70,7 +78,7 @@ export default function ProductsPage() {
       const data = await res.json();
       setProducts(data.products || []);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      // Error fetching products
     } finally {
       setLoading(false);
     }
@@ -82,7 +90,7 @@ export default function ProductsPage() {
       const data = await res.json();
       setCategories(data);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      // Error fetching categories
     }
   };
 
@@ -103,6 +111,7 @@ export default function ProductsPage() {
         description_ar: product.description_ar || '',
         description_en: product.description_en || '',
         variants: product.variants || [],
+        colors: product.colors || [],
       });
       setImageInput('');
       setImageSource('url');
@@ -123,6 +132,7 @@ export default function ProductsPage() {
         description_ar: '',
         description_en: '',
         variants: [],
+        colors: [],
       });
       setImageInput('');
       setImageSource('url');
@@ -188,6 +198,7 @@ export default function ProductsPage() {
         description_ar: formData.description_ar || undefined,
         description_en: formData.description_en || undefined,
         variants: formData.variants || [],
+        colors: formData.colors || [],
       };
 
       const url = selectedProduct
@@ -211,7 +222,6 @@ export default function ProductsPage() {
       fetchProducts();
       toast.success(selectedProduct ? 'تم تحديث المنتج بنجاح' : 'تم إضافة المنتج بنجاح');
     } catch (error) {
-      console.error('Error saving product:', error);
       toast.error('حدث خطأ أثناء الحفظ');
     } finally {
       setSubmitting(false);
@@ -237,7 +247,6 @@ export default function ProductsPage() {
       fetchProducts();
       toast.success('تم حذف المنتج بنجاح');
     } catch (error) {
-      console.error('Error deleting product:', error);
       toast.error('حدث خطأ أثناء الحذف');
     }
   };
@@ -284,6 +293,40 @@ export default function ProductsPage() {
     const newAttributes = { ...formData.attributes };
     delete newAttributes[key];
     setFormData({ ...formData, attributes: newAttributes });
+  };
+
+  const addColor = () => {
+    if (!colorName.trim() || !colorImage.trim()) {
+      toast.error('يرجى إدخال اسم اللون وصورة');
+      return;
+    }
+
+    const newColor = {
+      id: `color-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name_ar: colorName.trim(),
+      name_en: colorName.trim(),
+      image: colorImage,
+      stock: colorStock,
+      available: colorStock > 0,
+    };
+
+    setFormData({
+      ...formData,
+      colors: [...formData.colors, newColor],
+    });
+
+    // Reset form
+    setColorName('');
+    setColorImage('');
+    setColorStock(0);
+    setColorImagePreview('');
+  };
+
+  const removeColor = (colorId: string) => {
+    setFormData({
+      ...formData,
+      colors: formData.colors.filter((c) => c.id !== colorId),
+    });
   };
 
   const generateSlug = (text: string) => {
@@ -474,12 +517,14 @@ export default function ProductsPage() {
                     {imagePreview && (
                       <div className="mt-2">
                         <p className="text-sm mb-2">معاينة الصورة:</p>
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="w-full h-48 object-cover rounded-md border"
-                          onError={() => setImagePreview('')}
-                        />
+                        <div className="relative w-full h-48 overflow-hidden rounded-md border bg-muted">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-full h-full object-contain"
+                            onError={() => setImagePreview('')}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -511,11 +556,13 @@ export default function ProductsPage() {
                     {imagePreview && (
                       <div className="mt-2">
                         <p className="text-sm mb-2">معاينة الصورة:</p>
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="w-full h-48 object-cover rounded-md border"
-                        />
+                        <div className="relative w-full h-48 overflow-hidden rounded-md border bg-muted">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
                         <Button
                           type="button"
                           onClick={addImage}
@@ -536,16 +583,18 @@ export default function ProductsPage() {
                       {formData.images.map((img, index) => (
                         <div
                           key={index}
-                          className="relative group border rounded-md overflow-hidden"
+                          className="relative group border rounded-md overflow-hidden bg-muted"
                         >
-                          <img
-                            src={img}
-                            alt={`Product ${index + 1}`}
-                            className="w-full h-32 object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/placeholder.png';
-                            }}
-                          />
+                          <div className="relative w-full h-32">
+                            <img
+                              src={img}
+                              alt={`Product ${index + 1}`}
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/placeholder.png';
+                              }}
+                            />
+                          </div>
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
@@ -566,13 +615,13 @@ export default function ProductsPage() {
                   <Input
                     value={attributeKey}
                     onChange={(e) => setAttributeKey(e.target.value)}
-                    placeholder="اسم الخاصية (مثل: اللون)"
+                    placeholder="اسم الخاصية (مثل: المقاس)"
                   />
                   <div className="flex gap-2">
                     <Input
                       value={attributeValue}
                       onChange={(e) => setAttributeValue(e.target.value)}
-                      placeholder="القيمة (مثل: أحمر)"
+                      placeholder="القيمة (مثل: 12)"
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -604,6 +653,154 @@ export default function ProductsPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Colors Section */}
+              <div className="space-y-3 border-t pt-4">
+                <Label className="text-base font-semibold">الألوان (اختياري)</Label>
+                <p className="text-sm text-muted-foreground">
+                  أضف ألوان مختلفة للمنتج مع صورة لكل لون
+                </p>
+                
+                <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      value={colorName}
+                      onChange={(e) => setColorName(e.target.value)}
+                      placeholder="اسم اللون (مثل: أحمر)"
+                      className="h-10"
+                    />
+                    <Input
+                      type="number"
+                      min="0"
+                      value={colorStock || ''}
+                      onChange={(e) => setColorStock(parseInt(e.target.value) || 0)}
+                      placeholder="المخزون"
+                      className="h-10"
+                    />
+                  </div>
+                  
+                  <div className="flex border-b border-border mb-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setColorImageSource('url');
+                        setColorImagePreview('');
+                      }}
+                      className={`px-3 py-1 text-xs font-medium transition-colors ${
+                        colorImageSource === 'url'
+                          ? 'border-b-2 border-primary text-primary'
+                          : 'text-muted-foreground'
+                      }`}
+                    >
+                      رابط
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setColorImageSource('file');
+                        setColorImagePreview('');
+                      }}
+                      className={`px-3 py-1 text-xs font-medium transition-colors ${
+                        colorImageSource === 'file'
+                          ? 'border-b-2 border-primary text-primary'
+                          : 'text-muted-foreground'
+                      }`}
+                    >
+                      ملف
+                    </button>
+                  </div>
+
+                  {colorImageSource === 'url' ? (
+                    <div className="flex gap-2">
+                      <Input
+                        value={colorImage}
+                        onChange={(e) => {
+                          setColorImage(e.target.value);
+                          setColorImagePreview(e.target.value);
+                        }}
+                        placeholder="رابط صورة اللون"
+                        className="h-10 text-sm"
+                      />
+                    </div>
+                  ) : (
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            const result = reader.result as string;
+                            setColorImagePreview(result);
+                            setColorImage(result);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                        e.target.value = '';
+                      }}
+                      className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                    />
+                  )}
+
+                  {colorImagePreview && (
+                    <div className="mt-2">
+                      <div className="relative w-20 h-20 overflow-hidden rounded border bg-muted">
+                        <img
+                          src={colorImagePreview}
+                          alt="Color preview"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <Button
+                    type="button"
+                    onClick={addColor}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    إضافة لون
+                  </Button>
+                </div>
+
+                {formData.colors.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">الألوان المضافة:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {formData.colors.map((color) => (
+                        <div
+                          key={color.id}
+                          className="flex items-center gap-2 p-2 bg-muted rounded-md group"
+                        >
+                          <div className="relative w-12 h-12 overflow-hidden rounded border bg-muted">
+                            <img
+                              src={color.image}
+                              alt={color.name_ar}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{color.name_ar}</p>
+                            <p className="text-xs text-muted-foreground">
+                              مخزون: {color.stock}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeColor(color.id)}
+                            className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -686,11 +883,13 @@ export default function ProductsPage() {
             </CardHeader>
             <CardContent>
               {product.images && product.images.length > 0 && (
-                <img
-                  src={product.images[0]}
-                  alt={product.title_ar}
-                  className="w-full h-32 object-cover rounded-md mb-3"
-                />
+                <div className="relative w-full h-48 overflow-hidden rounded-md mb-3 bg-muted">
+                  <img
+                    src={product.images[0]}
+                    alt={product.title_ar}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
               )}
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">

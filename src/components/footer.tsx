@@ -17,7 +17,7 @@ export function FooterClient({ contactInfo }: FooterClientProps) {
   const whatsappLink = `https://wa.me/${phoneNumber}`;
 
   return (
-    <footer className="border-t bg-muted/50 mt-auto">
+    <footer className="main-footer border-t bg-muted/50 mt-auto">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>

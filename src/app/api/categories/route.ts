@@ -35,7 +35,6 @@ export async function GET() {
     
     return NextResponse.json(categoriesWithChildren, { status: 200 });
   } catch (error: any) {
-    console.error('Get categories error:', error);
     // Return empty array on error
     return NextResponse.json([], { status: 200 });
   }

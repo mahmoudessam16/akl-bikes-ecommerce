@@ -24,7 +24,7 @@ export default function AdminDashboard() {
       const [productsRes, categoriesRes, ordersRes] = await Promise.all([
         fetch('/api/admin/products?limit=1'),
         fetch('/api/admin/categories'),
-        fetch('/api/orders'),
+        fetch('/api/admin/orders'),
       ]);
 
       const productsData = await productsRes.json();
@@ -34,11 +34,11 @@ export default function AdminDashboard() {
       setStats({
         products: productsData.total || 0,
         categories: categoriesData.length || 0,
-        orders: ordersData.orders?.length || 0,
-        revenue: ordersData.orders?.reduce((sum: number, order: any) => sum + order.total, 0) || 0,
+        orders: ordersData.stats?.total || 0,
+        revenue: ordersData.stats?.revenue || 0, // Only delivered orders revenue
       });
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      // Error fetching stats
     } finally {
       setLoading(false);
     }

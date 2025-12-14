@@ -47,7 +47,6 @@ export default function SettingsPage() {
       setWorkingHours(data.working_hours || 'السبت - الخميس: 9:00 ص - 9:00 م\nالجمعة: 2:00 م - 9:00 م');
       setGoogleMapsUrl(data.google_maps_url || 'https://maps.app.goo.gl/jDiErmUTh2nqXRLBA?g_st=aw');
     } catch (error) {
-      console.error('Error fetching settings:', error);
       setLogoUrl('/imgs/logo-light.PNG');
       setImagePreview('/imgs/logo-light.PNG');
       setPhone('+966 50 123 4567');
@@ -183,7 +182,6 @@ export default function SettingsPage() {
       window.dispatchEvent(new Event('contactInfoUpdated'));
       toast.success('تم حفظ الإعدادات بنجاح');
     } catch (error) {
-      console.error('Error saving settings:', error);
       toast.error('حدث خطأ أثناء الحفظ');
     } finally {
       setSaving(false);

@@ -1,8 +1,19 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import { Search, X } from 'lucide-react';
+
+// Lazy load framer-motion to reduce initial bundle size
+const MotionDiv = dynamic(
+  () => import('framer-motion').then((mod) => mod.motion.div),
+  { ssr: false }
+);
+
+const AnimatePresence = dynamic(
+  () => import('framer-motion').then((mod) => mod.AnimatePresence),
+  { ssr: false }
+);
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -159,7 +170,7 @@ export function ProductsPageClient({
       {/* Products Grid */}
       <AnimatePresence mode="wait">
         {filteredProducts.length > 0 ? (
-          <motion.div
+          <MotionDiv
             key={`${searchQuery}-${selectedCategory}-${sortBy}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -168,7 +179,7 @@ export function ProductsPageClient({
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           >
             {filteredProducts.map((product, index) => (
-              <motion.div
+              <MotionDiv
                 key={product.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -178,11 +189,11 @@ export function ProductsPageClient({
                 }}
               >
                 <ProductCard product={product} />
-              </motion.div>
+              </MotionDiv>
             ))}
-          </motion.div>
+          </MotionDiv>
         ) : (
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center py-12"
@@ -193,7 +204,7 @@ export function ProductsPageClient({
             <Button variant="outline" onClick={clearFilters}>
               مسح الفلاتر
             </Button>
-          </motion.div>
+          </MotionDiv>
         )}
       </AnimatePresence>
     </div>

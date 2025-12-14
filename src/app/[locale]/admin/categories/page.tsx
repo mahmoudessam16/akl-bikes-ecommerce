@@ -59,7 +59,7 @@ export default function CategoriesPage() {
       const data = await res.json();
       setCategories(data);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      // Error fetching categories
     } finally {
       setLoading(false);
     }
@@ -191,7 +191,6 @@ export default function CategoriesPage() {
       window.dispatchEvent(new Event('categoriesUpdated'));
       toast.success('تم حذف الفئة بنجاح');
     } catch (error) {
-      console.error('Error deleting category:', error);
       toast.error('حدث خطأ أثناء الحذف');
     }
   };
@@ -199,18 +198,15 @@ export default function CategoriesPage() {
   const generateSlug = (text: string) => {
     if (!text || text.trim() === '') return '';
     
-    // Convert Arabic text to transliterated slug
-    // For now, we'll use a simple approach: remove Arabic characters and keep only Latin/numbers
-    // In production, you might want to use a transliteration library
     return text
       .trim()
       .toLowerCase()
-      .replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g, '') // Remove Arabic characters
-      .replace(/[^a-z0-9\s-]+/g, '') // Remove special characters except spaces and hyphens
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
-      .replace(/(^-|-$)/g, '') // Remove leading/trailing hyphens
-      || `category-${Date.now()}`; // Fallback if result is empty
+      .replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g, '')
+      .replace(/[^a-z0-9\s-]+/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/(^-|-$)/g, '')
+      || `category-${Date.now()}`;
   };
 
   const mainCategories = categories.filter(c => !c.parentId);
@@ -458,26 +454,62 @@ export default function CategoriesPage() {
             </CardHeader>
             <CardContent>
               {category.image && (
-                <img
-                  src={category.image}
-                  alt={category.name_ar}
-                  className="w-full h-32 object-cover rounded-md mb-3"
-                />
+                <div className="relative w-full h-48 overflow-hidden rounded-md mb-3 bg-muted">
+                  <img
+                    src={category.image}
+                    alt={category.name_ar}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
               )}
               <p className="text-sm text-muted-foreground mb-3">
                 {category.description_ar || 'لا يوجد وصف'}
               </p>
               {category.children && category.children.length > 0 && (
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <p className="text-xs font-medium text-muted-foreground">الفئات الفرعية:</p>
-                  {category.children.map((child) => (
-                    <div
-                      key={child.id}
-                      className="text-xs bg-muted px-2 py-1 rounded inline-block ml-1"
-                    >
-                      {child.name_ar}
-                    </div>
-                  ))}
+                  {category.children.map((child) => {
+                    // Use child directly as it contains all necessary data
+                    const childCategory: Category = {
+                      id: child.id,
+                      name_ar: child.name_ar,
+                      name_en: child.name_en || child.name_ar,
+                      slug: child.slug,
+                      parentId: child.parentId,
+                      image: child.image,
+                      description_ar: child.description_ar,
+                      description_en: child.description_en,
+                    };
+                    return (
+                      <div
+                        key={child.id}
+                        className="flex items-center justify-between bg-muted px-3 py-2 rounded-md group hover:bg-muted/80 transition-colors"
+                      >
+                        <span className="text-sm">{child.name_ar}</span>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenDialog(childCategory)}
+                            className="h-6 w-6"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedCategory(childCategory);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="h-6 w-6 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

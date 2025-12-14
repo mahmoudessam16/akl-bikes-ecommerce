@@ -57,7 +57,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Verification error:', error);
     return NextResponse.json(
       { error: error.message || 'حدث خطأ أثناء التحقق من البريد الإلكتروني' },
       { status: 500 }

@@ -60,7 +60,6 @@ export async function PUT(
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Update category error:', error);
     return NextResponse.json(
       { error: error.message || 'حدث خطأ أثناء تحديث الفئة' },
       { status: 500 }
@@ -110,7 +109,6 @@ export async function DELETE(
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Delete category error:', error);
     return NextResponse.json(
       { error: error.message || 'حدث خطأ أثناء حذف الفئة' },
       { status: 500 }

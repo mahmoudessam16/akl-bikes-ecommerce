@@ -12,9 +12,8 @@ const transporter = nodemailer.createTransport({
 
 export async function sendVerificationEmail(email: string, code: string) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-    console.warn('SMTP credentials not configured. Email will not be sent.');
-    // In development, you might want to log the code instead
-    console.log(`Verification code for ${email}: ${code}`);
+    // SMTP credentials not configured. Email will not be sent.
+    // In development, verification code would be logged here
     return;
   }
 
@@ -38,7 +37,6 @@ export async function sendVerificationEmail(email: string, code: string) {
   try {
     await transporter.sendMail(mailOptions);
   } catch (error) {
-    console.error('Error sending email:', error);
     throw error;
   }
 }

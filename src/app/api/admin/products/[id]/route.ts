@@ -67,7 +67,6 @@ export async function PUT(
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Update product error:', error);
     return NextResponse.json(
       { error: error.message || 'حدث خطأ أثناء تحديث المنتج' },
       { status: 500 }
@@ -108,7 +107,6 @@ export async function DELETE(
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Delete product error:', error);
     return NextResponse.json(
       { error: error.message || 'حدث خطأ أثناء حذف المنتج' },
       { status: 500 }
