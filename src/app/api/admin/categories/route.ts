@@ -8,7 +8,11 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB();
     
-    const categories = await Category.find().sort({ createdAt: -1 }).lean();
+    // Only fetch fields that are actually needed in the admin UI
+    const categories = await Category.find()
+      .sort({ createdAt: -1 })
+      .select('id name_ar name_en slug parentId image description_ar description_en createdAt updatedAt')
+      .lean();
     
     // Transform to match frontend structure (with children)
     const mainCategories = categories.filter(c => !c.parentId);

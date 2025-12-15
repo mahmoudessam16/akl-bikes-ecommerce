@@ -27,18 +27,26 @@ export async function GET(request: NextRequest) {
     await connectDB();
 
     // Get all orders sorted by creation date (newest first)
+    // Use projection to avoid sending unnecessary fields to the client
     const orders = await Order.find({})
       .sort({ createdAt: -1 })
+      .select('orderNumber items total name phone address status createdAt userId')
       .populate('userId', 'name email')
       .lean();
 
-    // Calculate stats
+    // Calculate stats in memory (orders are already lean/plain objects)
     const totalOrders = orders.length;
-    const pendingOrders = orders.filter((o: any) => o.status === 'pending').length;
-    const deliveredOrders = orders.filter((o: any) => o.status === 'delivered').length;
-    const revenue = orders
-      .filter((o: any) => o.status === 'delivered')
-      .reduce((sum: number, order: any) => sum + order.total, 0);
+    let pendingOrders = 0;
+    let deliveredOrders = 0;
+    let revenue = 0;
+
+    for (const o of orders as any[]) {
+      if (o.status === 'pending') pendingOrders++;
+      if (o.status === 'delivered') {
+        deliveredOrders++;
+        revenue += o.total || 0;
+      }
+    }
 
     return NextResponse.json(
       {

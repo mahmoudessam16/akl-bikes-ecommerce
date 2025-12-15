@@ -54,6 +54,8 @@ const CategorySchema = new Schema<ICategory>(
 
 // Index for faster parent-child lookups
 CategorySchema.index({ parentId: 1 });
+CategorySchema.index({ slug: 1 });
+CategorySchema.index({ id: 1 });
 
 const Category: Model<ICategory> = mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema);
 

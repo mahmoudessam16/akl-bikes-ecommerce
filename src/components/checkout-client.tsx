@@ -38,13 +38,6 @@ export function CheckoutClient() {
   const [messageBody, setMessageBody] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [orderData, setOrderData] = useState<{
-    items: any[];
-    total: number;
-    name: string;
-    phone: string;
-    address: string;
-  } | null>(null);
 
   const total = getTotal();
 
@@ -77,36 +70,11 @@ export function CheckoutClient() {
       return;
     }
 
-    // Prepare order items for WhatsApp message (without creating order yet)
-    const orderItemsForMessage: OrderItem[] = items.map((item) => ({
-      sku: item.sku,
-      quantity: item.quantity,
-      price: item.price,
-      title_ar: item.title_ar,
-    }));
+    setIsLoading(true);
 
-    // Build message (without order number yet)
-    let message = `مرحباً، أريد إتمام الطلب التالي:\n\n`;
-    message += `الاسم: ${formData.name}\n`;
-    message += `الهاتف: ${formData.phone}\n`;
-    message += `العنوان: ${formData.address}\n\n`;
-    message += `المنتجات:\n`;
-    orderItemsForMessage.forEach((item) => {
-      message += `- ${item.title_ar} (SKU: ${item.sku})\n`;
-      message += `  الكمية: ${item.quantity} × ${item.price.toLocaleString('ar-EG')} جنيه مصري = ${(item.quantity * item.price).toLocaleString('ar-EG')} جنيه مصري\n`;
-    });
-    message += `\nالإجمالي: ${total.toLocaleString('ar-EG')} جنيه مصري`;
-
-    setMessageBody(message);
-
-    // Generate WhatsApp link
-    const encodedMessage = encodeURIComponent(message);
-    const link = `https://wa.me/${storePhone.replace(/[^0-9]/g, '')}?text=${encodedMessage}`;
-    setWhatsappLink(link);
-
-    // Store order data for later (when user clicks "Open in WhatsApp")
-    setOrderData({
-      items: items.map((item) => ({
+    try {
+      // Prepare order items for database
+      const orderItems = items.map((item) => ({
         productId: item.productId,
         sku: item.sku,
         title_ar: item.title_ar,
@@ -115,67 +83,71 @@ export function CheckoutClient() {
         image: item.image,
         variantId: item.variantId,
         variantName: item.variantName,
-      })),
-      total,
-      name: formData.name,
-      phone: formData.phone,
-      address: formData.address,
-    });
+      }));
 
-    setIsDialogOpen(true);
-  };
-
-  const handleOpenWhatsApp = async () => {
-    if (!orderData) {
-      setError('حدث خطأ: بيانات الطلب غير موجودة');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      // Now create the order in database when user clicks "Open in WhatsApp"
+      // Save order to database
       const orderResponse = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: orderData.items,
-          total: orderData.total,
-          name: orderData.name,
-          phone: orderData.phone,
-          address: orderData.address,
+          items: orderItems,
+          total,
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
         }),
       });
 
-      const responseData = await orderResponse.json();
+      const orderData = await orderResponse.json();
 
       if (!orderResponse.ok) {
-        setError(responseData.error || 'حدث خطأ أثناء إنشاء الطلب');
+        setError(orderData.error || 'حدث خطأ أثناء إنشاء الطلب');
         setIsLoading(false);
         return;
       }
 
-      // Update message with order number
-      const orderId = responseData.order.orderNumber;
-      const updatedMessage = messageBody.replace(
-        'مرحباً، أريد إتمام الطلب التالي:\n\n',
-        `مرحباً، أريد إتمام الطلب التالي:\n\nرقم الطلب: ${orderId}\n`
-      );
-      const encodedMessage = encodeURIComponent(updatedMessage);
-      const updatedLink = `https://wa.me/${storePhone.replace(/[^0-9]/g, '')}?text=${encodedMessage}`;
+      // Generate order ID from response
+      const orderId = orderData.order.orderNumber;
 
-      // Open WhatsApp with updated message
-      window.open(updatedLink, '_blank');
-      
-      // Clear cart and redirect
-      clearCart();
-      setIsDialogOpen(false);
-      router.push('/ar/orders');
+      // Prepare order items for WhatsApp message
+      const orderItemsForMessage: OrderItem[] = items.map((item) => ({
+        sku: item.sku,
+        quantity: item.quantity,
+        price: item.price,
+        title_ar: item.title_ar,
+      }));
+
+      // Build message
+      let message = `مرحباً، أريد إتمام الطلب التالي:\n\n`;
+      message += `رقم الطلب: ${orderId}\n`;
+      message += `الاسم: ${formData.name}\n`;
+      message += `الهاتف: ${formData.phone}\n`;
+      message += `العنوان: ${formData.address}\n\n`;
+      message += `المنتجات:\n`;
+      orderItemsForMessage.forEach((item) => {
+        message += `- ${item.title_ar} (SKU: ${item.sku})\n`;
+        message += `  الكمية: ${item.quantity} × ${item.price.toLocaleString('ar-EG')} جنيه مصري = ${(item.quantity * item.price).toLocaleString('ar-EG')} جنيه مصري\n`;
+      });
+      message += `\nالإجمالي: ${total.toLocaleString('ar-EG')} جنيه مصري`;
+
+      setMessageBody(message);
+
+      // Generate WhatsApp link
+      const encodedMessage = encodeURIComponent(message);
+      const link = `https://wa.me/${storePhone.replace(/[^0-9]/g, '')}?text=${encodedMessage}`;
+      setWhatsappLink(link);
+      setIsDialogOpen(true);
     } catch (err) {
       setError('حدث خطأ أثناء إنشاء الطلب');
+    } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOpenWhatsApp = () => {
+    window.open(whatsappLink, '_blank');
+    clearCart();
+    router.push('/ar/orders');
   };
 
   if (status === 'loading') {
@@ -290,10 +262,10 @@ export function CheckoutClient() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    جاري التحضير...
+                    جاري إنشاء الطلب...
                   </>
                 ) : (
-                  'مراجعة الطلب'
+                  'تأكيد الطلب'
                 )}
               </Button>
             </CardContent>
@@ -321,18 +293,11 @@ export function CheckoutClient() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isLoading}>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               إلغاء
             </Button>
-            <Button onClick={handleOpenWhatsApp} disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  جاري إنشاء الطلب...
-                </>
-              ) : (
-                'فتح في واتساب'
-              )}
+            <Button onClick={handleOpenWhatsApp}>
+              فتح في واتساب
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -125,6 +125,9 @@ const ProductSchema = new Schema<IProduct>(
 
 // Indexes for faster queries
 ProductSchema.index({ primary_category: 1 });
+ProductSchema.index({ slug: 1 });
+ProductSchema.index({ id: 1 });
+ProductSchema.index({ createdAt: -1 });
 
 const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);
 

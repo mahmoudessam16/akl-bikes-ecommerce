@@ -1,53 +1,104 @@
 import type { Product, Category } from '@/types';
+import { unstable_cache } from 'next/cache';
+
+// --- Internal helpers (server-only) ---
+
+// Products: لا نستخدم unstable_cache هنا لأن النتيجة كبيرة وقد تتخطى 2MB
+async function getProductsFromDb(): Promise<Product[]> {
+  const { default: connectDB } = await import('@/db/mongoose');
+  const ProductModel = (await import('@/models/Product')).default;
+  await connectDB();
+
+  const products = await ProductModel.find()
+    .sort({ createdAt: -1 })
+    .select(
+      'id sku title_ar title_en slug price stock primary_category images attributes description_ar description_en colors variants'
+    )
+    .lean();
+
+  return products.map((p: any) => {
+    const colors = (p.colors || []).map((color: any) => ({
+      id: color.id,
+      name_ar: color.name_ar,
+      name_en: color.name_en,
+      image: color.image,
+      stock: color.stock,
+      available: color.available,
+    }));
+
+    const variants = (p.variants || []).map((variant: any) => ({
+      id: variant.id,
+      name_ar: variant.name_ar,
+      name_en: variant.name_en,
+      price_modifier: variant.price_modifier,
+      stock: variant.stock,
+      attributes: variant.attributes || {},
+    }));
+
+    return {
+      id: p.id,
+      sku: p.sku,
+      title_ar: p.title_ar,
+      title_en: p.title_en,
+      slug: p.slug,
+      price: p.price,
+      stock: p.stock,
+      primary_category: p.primary_category,
+      images: p.images || [],
+      attributes: p.attributes || {},
+      description_ar: p.description_ar,
+      description_en: p.description_en,
+      variants,
+      colors,
+    } as Product;
+  });
+}
+
+const getCategoriesFromDb = unstable_cache(
+  async () => {
+    const { default: connectDB } = await import('@/db/mongoose');
+    const CategoryModel = (await import('@/models/Category')).default;
+    await connectDB();
+
+    const categories = await CategoryModel.find()
+      .sort({ createdAt: -1 })
+      .select('id name_ar name_en slug parentId image description_ar description_en createdAt updatedAt')
+      .lean();
+
+    const mainCategories = categories.filter((c: any) => !c.parentId);
+    const childCategories = categories.filter((c: any) => c.parentId);
+
+    return mainCategories.map((main: any) => ({
+      id: main.id,
+      name_ar: main.name_ar,
+      name_en: main.name_en,
+      slug: main.slug,
+      parentId: main.parentId,
+      image: main.image,
+      description_ar: main.description_ar,
+      description_en: main.description_en,
+      children: childCategories
+        .filter((child: any) => child.parentId === main.id)
+        .map((child: any) => ({
+          id: child.id,
+          name_ar: child.name_ar,
+          name_en: child.name_en,
+          slug: child.slug,
+          parentId: child.parentId,
+          image: child.image,
+        })),
+    })) as Category[];
+  },
+  ['categories-all'],
+  { revalidate: 3600, tags: ['categories'] }
+);
 
 export const getProducts = async (): Promise<Product[]> => {
-  // Check if we're in a server environment
+  // Server-side: use cached DB access
   if (typeof window === 'undefined') {
     try {
-      // Use direct database access in server components
-      const { default: connectDB } = await import('@/db/mongoose');
-      const Product = (await import('@/models/Product')).default;
-      await connectDB();
-      const products = await Product.find().sort({ createdAt: -1 }).lean();
-      return products.map((p: any) => {
-        // Convert colors and variants to plain objects (remove _id)
-        const colors = (p.colors || []).map((color: any) => ({
-          id: color.id,
-          name_ar: color.name_ar,
-          name_en: color.name_en,
-          image: color.image,
-          stock: color.stock,
-          available: color.available,
-        }));
-        
-        const variants = (p.variants || []).map((variant: any) => ({
-          id: variant.id,
-          name_ar: variant.name_ar,
-          name_en: variant.name_en,
-          price_modifier: variant.price_modifier,
-          stock: variant.stock,
-          attributes: variant.attributes || {},
-        }));
-
-        return {
-          id: p.id,
-          sku: p.sku,
-          title_ar: p.title_ar,
-          title_en: p.title_en,
-          slug: p.slug,
-          price: p.price,
-          stock: p.stock,
-          primary_category: p.primary_category,
-          images: p.images || [],
-          attributes: p.attributes || {},
-          description_ar: p.description_ar,
-          description_en: p.description_en,
-          variants,
-          colors,
-        };
-      }) as Product[];
-    } catch (error) {
-      // Return empty array if database fails
+      return await getProductsFromDb();
+    } catch {
       return [];
     }
   } else {
@@ -57,10 +108,9 @@ export const getProducts = async (): Promise<Product[]> => {
       if (res.ok) {
         return await res.json();
       }
-    } catch (error) {
+    } catch {
       // API fetch failed, return empty array
     }
-    // Return empty array if API fails
     return [];
   }
 };
@@ -135,41 +185,11 @@ export const getProductBySlug = async (slug: string): Promise<Product | null> =>
 };
 
 export const getCategories = async (): Promise<Category[]> => {
-  // Check if we're in a server environment
+  // Server-side: use cached DB access
   if (typeof window === 'undefined') {
     try {
-      // Use direct database access in server components
-      const { default: connectDB } = await import('@/db/mongoose');
-      const Category = (await import('@/models/Category')).default;
-      await connectDB();
-      const categories = await Category.find().sort({ createdAt: -1 }).lean();
-      
-      // Transform to match frontend structure (with children)
-      const mainCategories = categories.filter((c: any) => !c.parentId);
-      const childCategories = categories.filter((c: any) => c.parentId);
-      
-      return mainCategories.map((main: any) => ({
-        id: main.id,
-        name_ar: main.name_ar,
-        name_en: main.name_en,
-        slug: main.slug,
-        parentId: main.parentId,
-        image: main.image,
-        description_ar: main.description_ar,
-        description_en: main.description_en,
-        children: childCategories
-          .filter((child: any) => child.parentId === main.id)
-          .map((child: any) => ({
-            id: child.id,
-            name_ar: child.name_ar,
-            name_en: child.name_en,
-            slug: child.slug,
-            parentId: child.parentId,
-            image: child.image,
-          })),
-      })) as Category[];
-    } catch (error) {
-      // Return empty array if database fails
+      return await getCategoriesFromDb();
+    } catch {
       return [];
     }
   } else {
@@ -179,10 +199,9 @@ export const getCategories = async (): Promise<Category[]> => {
       if (res.ok) {
         return await res.json();
       }
-    } catch (error) {
+    } catch {
       // API fetch failed, return empty array
     }
-    // Return empty array if API fails
     return [];
   }
 };
@@ -211,13 +230,118 @@ export const getProductsByCategory = async (
   limit: number = 12,
   sortBy: 'popularity' | 'price_asc' | 'price_desc' = 'popularity'
 ): Promise<{ products: Product[]; total: number; hasMore: boolean }> => {
+  // Server-side: query MongoDB directly for better performance
+  if (typeof window === 'undefined') {
+    const [categories] = await Promise.all([getCategories()]);
+
+    // Find category by ID or slug
+    let category = categories.find((c) => c.id === categoryIdOrSlug || c.slug === categoryIdOrSlug);
+
+    // If not found in main categories, search in children
+    if (!category) {
+      for (const cat of categories) {
+        if (cat.children) {
+          const child = cat.children.find((c) => c.id === categoryIdOrSlug || c.slug === categoryIdOrSlug);
+          if (child) {
+            category = child;
+            break;
+          }
+        }
+      }
+    }
+
+    // If still not found, return empty
+    if (!category) {
+      return { products: [], total: 0, hasMore: false };
+    }
+
+    // Build list of category IDs this category represents (main + children)
+    const categoryIds =
+      category.children && category.children.length > 0
+        ? [category.id, ...category.children.map((c) => c.id)]
+        : [category.id];
+
+    const { default: connectDB } = await import('@/db/mongoose');
+    const ProductModel = (await import('@/models/Product')).default;
+    await connectDB();
+
+    const query: any = { primary_category: { $in: categoryIds } };
+
+    // Map sort option to Mongo sort
+    const sort: any = {};
+    if (sortBy === 'price_asc') {
+      sort.price = 1;
+    } else if (sortBy === 'price_desc') {
+      sort.price = -1;
+    } else {
+      // popularity: use createdAt desc as a proxy
+      sort.createdAt = -1;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [rawProducts, total] = await Promise.all([
+      ProductModel.find(query)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .select(
+          'id sku title_ar title_en slug price stock primary_category images attributes description_ar description_en colors variants'
+        )
+        .lean(),
+      ProductModel.countDocuments(query),
+    ]);
+
+    const products = rawProducts.map((p: any) => {
+      const colors = (p.colors || []).map((color: any) => ({
+        id: color.id,
+        name_ar: color.name_ar,
+        name_en: color.name_en,
+        image: color.image,
+        stock: color.stock,
+        available: color.available,
+      }));
+
+      const variants = (p.variants || []).map((variant: any) => ({
+        id: variant.id,
+        name_ar: variant.name_ar,
+        name_en: variant.name_en,
+        price_modifier: variant.price_modifier,
+        stock: variant.stock,
+        attributes: variant.attributes || {},
+      }));
+
+      return {
+        id: p.id,
+        sku: p.sku,
+        title_ar: p.title_ar,
+        title_en: p.title_en,
+        slug: p.slug,
+        price: p.price,
+        stock: p.stock,
+        primary_category: p.primary_category,
+        images: p.images || [],
+        attributes: p.attributes || {},
+        description_ar: p.description_ar,
+        description_en: p.description_en,
+        variants,
+        colors,
+      } as Product;
+    });
+
+    return {
+      products,
+      total,
+      hasMore: skip + products.length < total,
+    };
+  }
+
+  // Client-side fallback: use existing in-memory logic
   const allProducts = await getProducts();
   const categories = await getCategories();
-  
-  // Find category by ID or slug
+
   let category = categories.find((c) => c.id === categoryIdOrSlug || c.slug === categoryIdOrSlug);
-  
-  // If not found in main categories, search in children
+
   if (!category) {
     for (const cat of categories) {
       if (cat.children) {
@@ -229,24 +353,21 @@ export const getProductsByCategory = async (
       }
     }
   }
-  
-  // Find all child category IDs if this is a main category
-  const categoryIds = category?.children 
+
+  const categoryIds = category?.children
     ? [category.id, ...category.children.map((c) => c.id)]
-    : category 
+    : category
     ? [category.id]
     : [];
-  
+
   let filtered = allProducts.filter((p) => categoryIds.includes(p.primary_category));
 
-  // Sort
   if (sortBy === 'price_asc') {
     filtered.sort((a, b) => a.price - b.price);
   } else if (sortBy === 'price_desc') {
     filtered.sort((a, b) => b.price - a.price);
   }
 
-  // Pagination (cursor-based simulation)
   const start = (page - 1) * limit;
   const end = start + limit;
   const products = filtered.slice(start, end);
