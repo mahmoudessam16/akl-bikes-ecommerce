@@ -229,7 +229,7 @@ export default function CategoriesPage() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog()} className="gap-2">
+            <Button onClick={() => handleOpenDialog()} className="gap-2 cursor-pointer">
               <Plus className="h-4 w-4" />
               إضافة فئة جديدة
             </Button>
@@ -405,10 +405,11 @@ export default function CategoriesPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setDialogOpen(false)}
+                  className='cursor-pointer'
                 >
                   إلغاء
                 </Button>
-                <Button type="submit" disabled={submitting}>
+                <Button type="submit" disabled={submitting} className='cursor-pointer'>
                   {submitting ? 'جاري الحفظ...' : selectedCategory ? 'تحديث' : 'إضافة'}
                 </Button>
               </DialogFooter>
@@ -434,7 +435,7 @@ export default function CategoriesPage() {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleOpenDialog(category)}
-                    className="h-8 w-8"
+                    className="h-8 w-8 cursor-pointer"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -445,7 +446,7 @@ export default function CategoriesPage() {
                       setSelectedCategory(category);
                       setDeleteDialogOpen(true);
                     }}
-                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    className="h-8 w-8 text-destructive hover:text-destructive cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -486,12 +487,12 @@ export default function CategoriesPage() {
                         className="flex items-center justify-between bg-muted px-3 py-2 rounded-md group hover:bg-muted/80 transition-colors"
                       >
                         <span className="text-sm">{child.name_ar}</span>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleOpenDialog(childCategory)}
-                            className="h-6 w-6"
+                            className="h-6 w-6 cursor-pointer"
                           >
                             <Edit className="h-3 w-3" />
                           </Button>
@@ -502,7 +503,7 @@ export default function CategoriesPage() {
                               setSelectedCategory(childCategory);
                               setDeleteDialogOpen(true);
                             }}
-                            className="h-6 w-6 text-destructive hover:text-destructive"
+                            className="h-6 w-6 text-destructive hover:text-destructive cursor-pointer"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>

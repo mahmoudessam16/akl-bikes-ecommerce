@@ -71,10 +71,10 @@ export function ProductCard({ product }: ProductCardProps) {
   const isOutOfStock = product.stock === 0;
 
   return (
-    <Link href={`/${locale}/product/${product.slug}`} className="block">
-      <Card className="group overflow-hidden hover:shadow-lg hover:shadow-primary/20 hover:border-primary/30 border-2 border-transparent hover-card-scale cursor-pointer">
-        <CardHeader className="p-0">
-          <div className="relative aspect-square w-full overflow-hidden bg-muted group">
+    <Link href={`/${locale}/product/${product.slug}`} className="block h-full">
+      <Card className="group overflow-hidden hover:shadow-md hover:border-primary/30 border cursor-pointer h-full flex flex-col bg-white pb-[5px] sm:pb-0">
+        <CardHeader className="p-0 flex-shrink-0">
+          <div className="relative aspect-square w-full overflow-hidden rounded-t-lg group">
             <div className="relative w-full h-full">
               {images.map((image, index) => (
                 <div
@@ -88,7 +88,7 @@ export function ProductCard({ product }: ProductCardProps) {
                     src={image}
                     alt={`${product.title_ar} - صورة ${index + 1}`}
                     fill
-                    className="object-contain transition-transform duration-300 group-hover:scale-105"
+                    className="object-contain transition-transform duration-300 group-hover:scale-105 p-1 sm:p-2"
                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                   />
                 </div>
@@ -101,77 +101,78 @@ export function ProductCard({ product }: ProductCardProps) {
                   variant="ghost"
                   size="icon"
                   onClick={goToPreviousImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                  className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 sm:h-8 sm:w-8"
                   aria-label="الصورة السابقة"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={goToNextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 sm:h-8 sm:w-8"
                   aria-label="الصورة التالية"
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white px-2 py-1 rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-black/50 text-white px-1.5 py-0.5 rounded-full text-[10px] sm:text-xs opacity-0 group-hover:opacity-100 transition-opacity">
                   {currentImageIndex + 1} / {images.length}
                 </div>
               </>
             )}
             
             {isOutOfStock && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-                <span className="text-white font-semibold">نفدت الكمية</span>
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-10 rounded-t-lg">
+                <span className="text-white text-xs sm:text-sm font-semibold">نفدت الكمية</span>
               </div>
             )}
           </div>
         </CardHeader>
-        <CardContent className="p-4">
-          <h3 className="font-semibold text-lg mb-2 line-clamp-2">{product.title_ar}</h3>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {Object.entries(product.attributes)
-              .slice(0, 2)
-              .map(([key, value]) => (
-                <span
-                  key={key}
-                  className="text-xs bg-muted px-2 py-1 rounded"
-                >
-                  {String(value)}
+        <CardContent className="p-0 sm:p-2 md:p-3 flex-1 flex flex-col">
+          <h3 className="font-medium text-xs line-clamp-2 mb-1.5 min-h-[2rem] text-foreground px-2 sm:px-0">{product.title_ar}</h3>
+          <div className="flex items-center justify-between mb-2 mt-auto gap-1 px-2 sm:px-0">
+            {/* Left side - Stock and first attribute */}
+            <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+              {product.stock > 0 && product.stock < 10 && (
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                  متبقي {product.stock}
                 </span>
-              ))}
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-2xl font-bold text-primary">
-              {product.price.toLocaleString('ar-EG')} جنيه مصري
-            </span>
-            {product.stock > 0 && product.stock < 10 && (
-              <span className="text-xs text-muted-foreground">
-                متبقي {product.stock}
+              )}
+              {Object.entries(product.attributes).length > 0 && (
+                <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded truncate">
+                  {String(Object.entries(product.attributes)[0][1])}
+                </span>
+              )}
+            </div>
+            {/* Right side - Price */}
+            <div className="flex flex-col items-end gap-0.5 flex-1 min-w-0">
+              <span className="text-xs sm:text-sm font-bold text-primary whitespace-nowrap">
+                {product.price.toLocaleString('ar-EG')} ج.م
               </span>
-            )}
+            </div>
           </div>
         </CardContent>
-        <CardFooter className="p-4 pt-0 flex gap-2">
+        <CardFooter className="p-0 sm:p-3 pt-0 flex gap-1.5 flex-shrink-0 flex-col px-2">
           <Button
             onClick={handleAddToCart}
             disabled={isOutOfStock}
             variant="outline"
-            className="flex-1 cursor-pointer !transition-all !duration-300 hover:!bg-primary hover:!text-primary-foreground hover:!border-primary hover:!shadow-md hover:!scale-105 active:!scale-100"
+            className="w-full cursor-pointer !transition-all !duration-300 hover:!bg-primary hover:!text-primary-foreground hover:!border-primary hover:!shadow-md text-[10px] sm:text-xs h-7 sm:h-8"
             size="sm"
           >
-            <ShoppingCart className="h-4 w-4 ml-2 rtl:ml-0 rtl:mr-2" />
-            أضف للسلة
+            <ShoppingCart className="h-3 w-3 ml-1 rtl:ml-0 rtl:mr-1" />
+            <span className="hidden sm:inline">أضف للسلة</span>
+            <span className="sm:hidden">السلة</span>
           </Button>
           <Button
             onClick={handleBuyNow}
             disabled={isOutOfStock}
-            className="flex-1 cursor-pointer !transition-all !duration-300 hover:!bg-transparent hover:!text-primary hover:!border-2 hover:!border-primary hover:!shadow-md hover:!scale-105 active:!scale-100"
+            className="w-full cursor-pointer !transition-all !duration-300 hover:!bg-transparent hover:!text-primary hover:!border-2 hover:!border-primary hover:!shadow-md text-[10px] sm:text-xs h-7 sm:h-8"
             size="sm"
           >
-            <Zap className="h-4 w-4 ml-2 rtl:ml-0 rtl:mr-2" />
-            شراء الآن
+            <Zap className="h-3 w-3 ml-1 rtl:ml-0 rtl:mr-1" />
+            <span className="hidden sm:inline">شراء الآن</span>
+            <span className="sm:hidden">شراء</span>
           </Button>
         </CardFooter>
       </Card>

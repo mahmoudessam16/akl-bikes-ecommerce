@@ -17,8 +17,8 @@ export function CartClient() {
       <Card>
         <CardContent className="p-12 text-center">
           <p className="text-lg text-muted-foreground mb-4">سلة التسوق فارغة</p>
-          <Link href="/ar">
-            <Button>تسوق الآن</Button>
+          <Link href="/ar/products">
+            <Button className='cursor-pointer'>تسوق الآن</Button>
           </Link>
         </CardContent>
       </Card>

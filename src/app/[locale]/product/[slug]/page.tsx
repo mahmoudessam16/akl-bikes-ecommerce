@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { getProductBySlug } from '@/lib/api/mock-data';
@@ -12,6 +13,20 @@ const ProductImageSliderWrapper = dynamic(() => import('@/components/product-ima
 const ProductDetailsClient = dynamic(() => import('@/components/product-details-client').then(mod => ({ default: mod.ProductDetailsClient })), {
   loading: () => <div className="space-y-6"><div className="h-32 bg-muted animate-pulse rounded"></div></div>,
   ssr: true,
+});
+
+// Lazy load suggested products component
+const SuggestedProducts = dynamic(() => import('@/components/suggested-products').then(mod => ({ default: mod.SuggestedProducts })), {
+  loading: () => (
+    <div className="mt-12">
+      <div className="h-6 sm:h-8 bg-muted animate-pulse rounded w-40 sm:w-48 mb-4 sm:mb-6 px-4"></div>
+      <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 px-4 hide-scrollbar">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="min-w-[140px] sm:min-w-[180px] h-[240px] sm:h-[280px] bg-muted animate-pulse rounded-lg flex-shrink-0"></div>
+        ))}
+      </div>
+    </div>
+  ),
 });
 
 // ISR: Revalidate every hour
@@ -85,6 +100,25 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <ProductDetailsClient product={product} />
         </div>
       </div>
+
+      {/* Suggested Products with Lazy Loading and Suspense */}
+      <Suspense
+        fallback={
+          <div className="mt-12">
+            <div className="h-6 sm:h-8 bg-muted animate-pulse rounded w-40 sm:w-48 mb-4 sm:mb-6 px-4"></div>
+            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 px-4 hide-scrollbar">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="min-w-[140px] sm:min-w-[180px] h-[240px] sm:h-[280px] bg-muted animate-pulse rounded-lg flex-shrink-0"></div>
+              ))}
+            </div>
+          </div>
+        }
+      >
+        <SuggestedProducts 
+          currentProductId={product.id} 
+          currentCategoryId={product.primary_category}
+        />
+      </Suspense>
     </main>
   );
 }

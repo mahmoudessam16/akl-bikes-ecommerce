@@ -366,7 +366,7 @@ export default function ProductsPage() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog()} className="gap-2">
+            <Button onClick={() => handleOpenDialog()} className="gap-2 cursor-pointer">
               <Plus className="h-4 w-4" />
               إضافة منتج جديد
             </Button>
@@ -465,7 +465,7 @@ export default function ProductsPage() {
                       setImageSource('url');
                       setImagePreview('');
                     }}
-                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    className={`px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
                       imageSource === 'url'
                         ? 'border-b-2 border-primary text-primary'
                         : 'text-muted-foreground hover:text-foreground'
@@ -629,7 +629,7 @@ export default function ProductsPage() {
                         }
                       }}
                     />
-                    <Button type="button" onClick={addAttribute} variant="outline">
+                    <Button type="button" onClick={addAttribute} variant="outline" className='cursor-pointer'>
                       إضافة
                     </Button>
                   </div>
@@ -646,7 +646,7 @@ export default function ProductsPage() {
                       <button
                         type="button"
                         onClick={() => removeAttribute(key)}
-                        className="text-destructive hover:text-destructive/80"
+                        className="text-destructive hover:text-destructive/80 cursor-pointer "
                       >
                         ×
                       </button>
@@ -687,7 +687,7 @@ export default function ProductsPage() {
                         setColorImageSource('url');
                         setColorImagePreview('');
                       }}
-                      className={`px-3 py-1 text-xs font-medium transition-colors ${
+                      className={`px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         colorImageSource === 'url'
                           ? 'border-b-2 border-primary text-primary'
                           : 'text-muted-foreground'
@@ -701,7 +701,7 @@ export default function ProductsPage() {
                         setColorImageSource('file');
                         setColorImagePreview('');
                       }}
-                      className={`px-3 py-1 text-xs font-medium transition-colors ${
+                      className={`px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         colorImageSource === 'file'
                           ? 'border-b-2 border-primary text-primary'
                           : 'text-muted-foreground'
@@ -761,7 +761,7 @@ export default function ProductsPage() {
                     onClick={addColor}
                     variant="outline"
                     size="sm"
-                    className="w-full"
+                    className="w-full cursor-pointer"
                   >
                     إضافة لون
                   </Button>
@@ -792,7 +792,7 @@ export default function ProductsPage() {
                           <button
                             type="button"
                             onClick={() => removeColor(color.id)}
-                            className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                           >
                             ×
                           </button>
@@ -822,10 +822,11 @@ export default function ProductsPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setDialogOpen(false)}
+                  className='cursor-pointer'
                 >
                   إلغاء
                 </Button>
-                <Button type="submit" disabled={submitting}>
+                <Button type="submit" disabled={submitting} className='cursor-pointer'>
                   {submitting ? 'جاري الحفظ...' : selectedProduct ? 'تحديث' : 'إضافة'}
                 </Button>
               </DialogFooter>
@@ -863,7 +864,7 @@ export default function ProductsPage() {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleOpenDialog(product)}
-                    className="h-8 w-8"
+                    className="h-8 w-8 cursor-pointer"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -874,7 +875,7 @@ export default function ProductsPage() {
                       setSelectedProduct(product);
                       setDeleteDialogOpen(true);
                     }}
-                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    className="h-8 w-8 text-destructive hover:text-destructive cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -931,7 +932,7 @@ export default function ProductsPage() {
             <AlertDialogCancel>إلغاء</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
             >
               حذف
             </AlertDialogAction>

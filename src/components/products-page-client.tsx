@@ -109,28 +109,27 @@ export function ProductsPageClient({
         )}
       </div>
 
-      {/* Filters and Search */}
-      <div className="space-y-4 p-4 bg-card rounded-lg border">
+      {/* Filters and Search - Compact Design */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 p-2 sm:p-3 bg-card rounded-lg border">
         {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground rtl:right-auto rtl:left-3" />
+        <div className="relative flex-1">
+          <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground rtl:right-auto rtl:left-2" />
           <Input
             type="text"
             placeholder="ابحث عن منتج..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-10 rtl:pr-3 rtl:pl-10"
+            className="pr-8 rtl:pr-2 rtl:pl-8 h-9 text-sm"
           />
         </div>
 
-        {/* Filters Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Filters - Flex Row */}
+        <div className="flex gap-2 sm:gap-3">
           {/* Category Filter */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">الفئة</label>
+          <div className="flex-1 sm:flex-initial sm:min-w-[140px]">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="اختر الفئة" />
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="الفئة" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">كل الفئات</SelectItem>
@@ -151,11 +150,10 @@ export function ProductsPageClient({
           </div>
 
           {/* Sort Filter */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">ترتيب حسب</label>
+          <div className="flex-1 sm:flex-initial sm:min-w-[140px]">
             <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="ترتيب حسب" />
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="ترتيب" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="popularity">الأكثر شعبية</SelectItem>
@@ -176,7 +174,7 @@ export function ProductsPageClient({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4"
           >
             {filteredProducts.map((product, index) => (
               <MotionDiv
@@ -187,6 +185,7 @@ export function ProductsPageClient({
                   duration: 0.3,
                   delay: index * 0.05,
                 }}
+                className="h-full"
               >
                 <ProductCard product={product} />
               </MotionDiv>

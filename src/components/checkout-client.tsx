@@ -184,7 +184,7 @@ export function CheckoutClient() {
       <Card>
         <CardContent className="p-12 text-center">
           <p className="text-lg text-muted-foreground mb-4">سلة التسوق فارغة</p>
-          <Button onClick={() => router.push('/ar')}>تسوق الآن</Button>
+          <Button className='cursor-pointer' onClick={() => router.push('/ar/products')}>تسوق الآن</Button>
         </CardContent>
       </Card>
     );
