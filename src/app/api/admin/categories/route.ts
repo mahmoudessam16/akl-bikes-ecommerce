@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
 import { auth } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/db/mongoose';
 import Category from '@/models/Category';
@@ -102,9 +101,6 @@ export async function POST(request: NextRequest) {
       description_ar,
       description_en,
     });
-
-    // Invalidate cached categories so navbar & filters get updated
-    revalidateTag('categories');
 
     return NextResponse.json(
       { message: 'تم إنشاء الفئة بنجاح', category },

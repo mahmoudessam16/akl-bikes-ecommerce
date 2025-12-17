@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
 import { auth } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/db/mongoose';
 import Category from '@/models/Category';
@@ -56,9 +55,6 @@ export async function PUT(
     
     await category.save();
 
-    // Invalidate cached categories so navbar & filters reflect updates
-    revalidateTag('categories');
-
     return NextResponse.json(
       { message: 'تم تحديث الفئة بنجاح', category },
       { status: 200 }
@@ -107,9 +103,6 @@ export async function DELETE(
         { status: 404 }
       );
     }
-
-    // Invalidate cached categories so navbar & filters reflect deletion
-    revalidateTag('categories');
 
     return NextResponse.json(
       { message: 'تم حذف الفئة بنجاح' },
