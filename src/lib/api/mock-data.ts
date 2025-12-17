@@ -1,5 +1,4 @@
 import type { Product, Category } from '@/types';
-import { unstable_cache } from 'next/cache';
 
 // --- Internal helpers (server-only) ---
 
@@ -12,7 +11,7 @@ async function getProductsFromDb(): Promise<Product[]> {
   const products = await ProductModel.find()
     .sort({ createdAt: -1 })
     .select(
-      'id sku title_ar title_en slug price stock primary_category images attributes description_ar description_en colors variants'
+      'id sku title_ar title_en slug price oldPrice stock primary_category images attributes description_ar description_en colors variants'
     )
     .lean();
 
@@ -42,6 +41,7 @@ async function getProductsFromDb(): Promise<Product[]> {
       title_en: p.title_en,
       slug: p.slug,
       price: p.price,
+      oldPrice: p.oldPrice,
       stock: p.stock,
       primary_category: p.primary_category,
       images: p.images || [],
@@ -54,44 +54,41 @@ async function getProductsFromDb(): Promise<Product[]> {
   });
 }
 
-const getCategoriesFromDb = unstable_cache(
-  async () => {
-    const { default: connectDB } = await import('@/db/mongoose');
-    const CategoryModel = (await import('@/models/Category')).default;
-    await connectDB();
+// Categories: بسيطة، نستدعي الداتا مباشرة بدون كاش عشان أي تعديل يظهر فورًا في النافبار والفلترة
+async function getCategoriesFromDb(): Promise<Category[]> {
+  const { default: connectDB } = await import('@/db/mongoose');
+  const CategoryModel = (await import('@/models/Category')).default;
+  await connectDB();
 
-    const categories = await CategoryModel.find()
-      .sort({ createdAt: -1 })
-      .select('id name_ar name_en slug parentId image description_ar description_en createdAt updatedAt')
-      .lean();
+  const categories = await CategoryModel.find()
+    .sort({ createdAt: -1 })
+    .select('id name_ar name_en slug parentId image description_ar description_en createdAt updatedAt')
+    .lean();
 
-    const mainCategories = categories.filter((c: any) => !c.parentId);
-    const childCategories = categories.filter((c: any) => c.parentId);
+  const mainCategories = categories.filter((c: any) => !c.parentId);
+  const childCategories = categories.filter((c: any) => c.parentId);
 
-    return mainCategories.map((main: any) => ({
-      id: main.id,
-      name_ar: main.name_ar,
-      name_en: main.name_en,
-      slug: main.slug,
-      parentId: main.parentId,
-      image: main.image,
-      description_ar: main.description_ar,
-      description_en: main.description_en,
-      children: childCategories
-        .filter((child: any) => child.parentId === main.id)
-        .map((child: any) => ({
-          id: child.id,
-          name_ar: child.name_ar,
-          name_en: child.name_en,
-          slug: child.slug,
-          parentId: child.parentId,
-          image: child.image,
-        })),
-    })) as Category[];
-  },
-  ['categories-all'],
-  { revalidate: 3600, tags: ['categories'] }
-);
+  return mainCategories.map((main: any) => ({
+    id: main.id,
+    name_ar: main.name_ar,
+    name_en: main.name_en,
+    slug: main.slug,
+    parentId: main.parentId,
+    image: main.image,
+    description_ar: main.description_ar,
+    description_en: main.description_en,
+    children: childCategories
+      .filter((child: any) => child.parentId === main.id)
+      .map((child: any) => ({
+        id: child.id,
+        name_ar: child.name_ar,
+        name_en: child.name_en,
+        slug: child.slug,
+        parentId: child.parentId,
+        image: child.image,
+      })),
+  })) as Category[];
+}
 
 export const getProducts = async (): Promise<Product[]> => {
   // Server-side: use cached DB access
@@ -153,6 +150,7 @@ export const getProductBySlug = async (slug: string): Promise<Product | null> =>
         title_en: product.title_en,
         slug: product.slug,
         price: product.price,
+        oldPrice: (product as any).oldPrice,
         stock: product.stock,
         primary_category: product.primary_category,
         images: product.images || [],
@@ -286,7 +284,7 @@ export const getProductsByCategory = async (
         .skip(skip)
         .limit(limit)
         .select(
-          'id sku title_ar title_en slug price stock primary_category images attributes description_ar description_en colors variants'
+          'id sku title_ar title_en slug price oldPrice stock primary_category images attributes description_ar description_en colors variants'
         )
         .lean(),
       ProductModel.countDocuments(query),
@@ -318,6 +316,7 @@ export const getProductsByCategory = async (
         title_en: p.title_en,
         slug: p.slug,
         price: p.price,
+        oldPrice: p.oldPrice,
         stock: p.stock,
         primary_category: p.primary_category,
         images: p.images || [],

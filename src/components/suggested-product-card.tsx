@@ -64,9 +64,19 @@ export function SuggestedProductCard({ product }: SuggestedProductCardProps) {
                 متبقي {product.stock}
               </span>
             )}
-            <span className="text-sm font-bold text-primary">
-              {product.price.toLocaleString('ar-EG')} ج.م
-            </span>
+            <div className="flex flex-col items-end gap-0.5">
+              <span className="text-sm font-bold text-primary">
+                {product.price.toLocaleString('ar-EG')} ج.م
+              </span>
+              {product.oldPrice && product.oldPrice > product.price && (
+                <span className="text-[11px] text-muted-foreground">
+                  <span className='font-bold text-primary'>بدلاً من </span>
+                  <span className="line-through">
+                    {product.oldPrice.toLocaleString('ar-EG')} ج.م
+                  </span>
+                </span>
+              )}
+            </div>
           </div>
           <Button
             onClick={handleAddToCart}

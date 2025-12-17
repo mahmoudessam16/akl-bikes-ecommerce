@@ -56,8 +56,18 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold mb-4">{product.title_ar}</h1>
-            <div className="text-3xl font-bold text-primary mb-4">
-              {product.price.toLocaleString('ar-EG')} جنيه مصري
+            <div className="mb-4">
+              <div className="text-3xl font-bold text-primary">
+                {product.price.toLocaleString('ar-EG')} جنيه مصري
+              </div>
+              {product.oldPrice && product.oldPrice > product.price && (
+                <div className="text-sm text-muted-foreground mt-1">
+                  <span className='font-bold text-primary'>بدلاً من </span>
+                  <span className="line-through">
+                    {product.oldPrice.toLocaleString('ar-EG')} جنيه مصري
+                  </span>
+                </div>
+              )}
             </div>
             {product.stock > 0 ? (
               <p className="text-green-600 font-medium">

@@ -44,6 +44,7 @@ export default function ProductsPage() {
     title_en: '',
     slug: '',
     price: 0,
+    oldPrice: 0,
     stock: 0,
     primary_category: '',
     images: [] as string[],
@@ -104,6 +105,7 @@ export default function ProductsPage() {
         title_en: product.title_en || '',
         slug: product.slug,
         price: product.price,
+        oldPrice: (product as any).oldPrice || 0,
         stock: product.stock,
         primary_category: product.primary_category,
         images: product.images || [],
@@ -125,6 +127,7 @@ export default function ProductsPage() {
         title_en: '',
         slug: '',
         price: 0,
+        oldPrice: 0,
         stock: 0,
         primary_category: '',
         images: [],
@@ -191,6 +194,7 @@ export default function ProductsPage() {
         title_en: formData.title_en || titleAr,
         slug: generatedSlug,
         price: formData.price,
+        oldPrice: formData.oldPrice || undefined,
         stock: formData.stock,
         primary_category: formData.primary_category,
         images: formData.images || [],
@@ -397,7 +401,7 @@ export default function ProductsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price" className="text-base">السعر (جنيه) *</Label>
                   <Input
@@ -415,6 +419,21 @@ export default function ProductsPage() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="oldPrice" className="text-base">السعر القديم (اختياري)</Label>
+                  <Input
+                    id="oldPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.oldPrice || ''}
+                    onChange={(e) =>
+                      setFormData({ ...formData, oldPrice: parseFloat(e.target.value) || 0 })
+                    }
+                    placeholder="0.00"
+                    className="h-12 text-lg"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="stock" className="text-base">المخزون *</Label>
                   <Input
                     id="stock"
@@ -429,7 +448,7 @@ export default function ProductsPage() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 col-span-2">
                   <Label htmlFor="primary_category" className="text-base">الفئة *</Label>
                   <select
                     id="primary_category"
@@ -899,6 +918,14 @@ export default function ProductsPage() {
                 <p className="text-lg font-bold text-primary">
                   {product.price.toLocaleString('ar-EG')} جنيه
                 </p>
+                {(product as any).oldPrice && (product as any).oldPrice > product.price && (
+                  <p className="text-sm text-muted-foreground">
+                    <span className='font-bold text-primary'>بدلاً من </span>
+                    <span className="line-through">
+                      {(product as any).oldPrice.toLocaleString('ar-EG')} جنيه
+                    </span>
+                  </p>
+                )}
                 <p className="text-sm">
                   <strong>المخزون:</strong> {product.stock}
                 </p>

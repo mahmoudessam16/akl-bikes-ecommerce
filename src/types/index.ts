@@ -14,6 +14,7 @@ export interface Product {
   title_en?: string;
   slug: string;
   price: number;
+  oldPrice?: number;
   stock: number;
   primary_category: string;
   images: string[];

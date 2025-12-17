@@ -26,6 +26,7 @@ export interface IProduct extends Document {
   title_en?: string;
   slug: string;
   price: number;
+  oldPrice?: number;
   stock: number;
   primary_category: string;
   images: string[];
@@ -83,6 +84,10 @@ const ProductSchema = new Schema<IProduct>(
     price: {
       type: Number,
       required: true,
+      min: 0,
+    },
+    oldPrice: {
+      type: Number,
       min: 0,
     },
     stock: {

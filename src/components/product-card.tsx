@@ -149,6 +149,14 @@ export function ProductCard({ product }: ProductCardProps) {
               <span className="text-xs sm:text-sm font-bold text-primary whitespace-nowrap">
                 {product.price.toLocaleString('ar-EG')} ج.م
               </span>
+              {product.oldPrice && product.oldPrice > product.price && (
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                  <span className='font-bold text-primary'>بدلاً من </span>
+                  <span className="line-through">
+                    {product.oldPrice.toLocaleString('ar-EG')} ج.م
+                  </span>
+                </span>
+              )}
             </div>
           </div>
         </CardContent>
