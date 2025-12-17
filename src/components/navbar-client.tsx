@@ -242,6 +242,13 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
                   <SheetTitle>القائمة</SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col gap-4 mt-4">
+                  <Link
+                    href="/ar"
+                    onClick={() => setIsOpen(false)}
+                    className="text-base font-medium transition-colors hover:text-primary duration-200 py-2 border-b pb-4"
+                  >
+                    الصفحة الرئيسية
+                  </Link>
                   {session?.user && isAdmin && (
                     <Link
                       href="/ar/admin"

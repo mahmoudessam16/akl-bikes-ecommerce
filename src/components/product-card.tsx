@@ -72,9 +72,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/${locale}/product/${product.slug}`} className="block h-full">
-      <Card className="group overflow-hidden hover:shadow-md hover:border-primary/30 border cursor-pointer h-full flex flex-col bg-white pb-[5px] sm:pb-0">
+      <Card className="group overflow-hidden hover:shadow-md hover:border-primary/30 border cursor-pointer h-full flex flex-col bg-white pb-1 sm:pb-0">
         <CardHeader className="p-0 flex-shrink-0">
-          <div className="relative aspect-square w-full overflow-hidden rounded-t-lg group">
+          <div className="relative h-40 sm:h-48 w-full overflow-hidden rounded-t-lg group bg-white">
             <div className="relative w-full h-full">
               {images.map((image, index) => (
                 <div
@@ -88,7 +88,7 @@ export function ProductCard({ product }: ProductCardProps) {
                     src={image}
                     alt={`${product.title_ar} - صورة ${index + 1}`}
                     fill
-                    className="object-contain transition-transform duration-300 group-hover:scale-105 p-1 sm:p-2"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105 p-0.5 sm:p-2"
                     sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                   />
                 </div>
@@ -129,8 +129,8 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </CardHeader>
         <CardContent className="p-0 sm:p-2 md:p-3 flex-1 flex flex-col">
-          <h3 className="font-medium text-xs line-clamp-2 mb-1.5 min-h-[2rem] text-foreground px-2 sm:px-0">{product.title_ar}</h3>
-          <div className="flex items-center justify-between mb-2 mt-auto gap-1 px-2 sm:px-0">
+          <h3 className="font-medium text-[11px] line-clamp-2 mb-1 min-h-[1.75rem] text-foreground px-2 sm:px-0">{product.title_ar}</h3>
+          <div className="flex items-center justify-between mb-1 mt-auto gap-1 px-2 sm:px-0">
             {/* Left side - Stock and first attribute */}
             <div className="flex flex-col gap-0.5 flex-1 min-w-0">
               {product.stock > 0 && product.stock < 10 && (
