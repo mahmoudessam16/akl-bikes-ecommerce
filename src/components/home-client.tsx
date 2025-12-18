@@ -55,10 +55,14 @@ export function HomeClient({ featuredProducts, featuredCategories }: HomeClientP
       <section className="py-12 bg-muted/30">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-8 text-center">الفئات المميزة</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {featuredCategories.map((category) => (
-              <CategoryCard key={category.id} category={category} />
-            ))}
+          <div className="overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4">
+            <div className="flex gap-4" style={{ width: 'max-content' }}>
+              {featuredCategories.map((category) => (
+                <div key={category.id} className="flex-shrink-0 w-[calc((100vw-3rem)/2)] sm:w-[calc((100vw-4rem)/3)] md:w-[calc((100vw-5rem)/4)] lg:w-[calc((100vw-6rem)/6)] max-w-[200px]">
+                  <CategoryCard category={category} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

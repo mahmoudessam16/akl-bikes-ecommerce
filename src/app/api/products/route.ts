@@ -57,10 +57,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ product: transformedProduct }, { status: 200 });
     }
     
-    // Otherwise, return all products with limit
+    // Otherwise, return all products with limit - only select needed fields
     const products = await Product.find()
       .sort({ createdAt: -1 })
       .limit(limit)
+      .select('id sku title_ar title_en slug price oldPrice stock primary_category images attributes description_ar description_en colors variants')
       .lean();
     
     const transformedProducts = products.map((p: any) => {

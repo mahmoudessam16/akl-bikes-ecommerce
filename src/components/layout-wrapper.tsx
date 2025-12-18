@@ -1,6 +1,5 @@
 import { NavbarServer } from '@/components/navbar-server';
 import { FooterServer } from '@/components/footer-server';
-import { BackToHomeButton } from '@/components/back-to-home-button';
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   // Always render Navbar and Footer
@@ -8,8 +7,9 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <NavbarServer />
-      <BackToHomeButton />
-      {children}
+      <div className="pb-16 lg:pb-0">
+        {children}
+      </div>
       <FooterServer />
     </div>
   );

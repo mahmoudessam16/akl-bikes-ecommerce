@@ -25,12 +25,16 @@ const HomeClient = dynamic(() => import('@/components/home-client').then(mod => 
   ssr: true, // Keep SSR for SEO
 });
 
-// ISR: Revalidate every hour
-export const revalidate = 3600;
+// ISR: Revalidate every 5 minutes for better performance
+export const revalidate = 300;
 
 export default async function Home() {
-  const products = await getProducts();
-  const categories = await getCategories();
+  // Fetch only what we need - much faster!
+  const [products, categories] = await Promise.all([
+    getProducts(8), // Only fetch 8 products for homepage
+    getCategories(), // Categories are cached and small
+  ]);
+  
   const featuredProducts = products.slice(0, 8);
   const featuredCategories = categories.slice(0, 6);
 

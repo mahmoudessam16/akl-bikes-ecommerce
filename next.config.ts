@@ -63,7 +63,23 @@ const nextConfig: NextConfig = {
         mongodb: 'commonjs mongodb',
       });
     }
+    
+    // Suppress source map warnings in development
+    if (process.env.NODE_ENV === 'development') {
+      config.devtool = 'eval-source-map';
+      config.ignoreWarnings = [
+        /Failed to parse source map/,
+        /Invalid source map/,
+        /sourceMapURL could not be parsed/,
+      ];
+    }
+    
     return config;
+  },
+  // Suppress console errors for known issues
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
   },
 };
 

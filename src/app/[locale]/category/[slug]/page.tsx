@@ -20,8 +20,8 @@ const CategoryPageClient = dynamic(() => import('@/components/category-page-clie
   ssr: true,
 });
 
-// ISR: Revalidate every hour
-export const revalidate = 3600;
+// ISR: Revalidate every 5 minutes for better performance
+export const revalidate = 300;
 
 interface CategoryPageProps {
   params: Promise<{ slug: string; locale: string }>;

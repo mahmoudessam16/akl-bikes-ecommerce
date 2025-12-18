@@ -1,38 +1,51 @@
 import type { Product, Category } from '@/types';
+import { unstable_cache } from 'next/cache';
 
 // --- Internal helpers (server-only) ---
 
-// Products: لا نستخدم unstable_cache هنا لأن النتيجة كبيرة وقد تتخطى 2MB
-async function getProductsFromDb(): Promise<Product[]> {
+// Products: استخدام cache مع revalidate قصير للصفحة الرئيسية
+async function getProductsFromDb(limit?: number): Promise<Product[]> {
   const { default: connectDB } = await import('@/db/mongoose');
   const ProductModel = (await import('@/models/Product')).default;
   await connectDB();
 
-  const products = await ProductModel.find()
+  let query = ProductModel.find()
     .sort({ createdAt: -1 })
     .select(
       'id sku title_ar title_en slug price oldPrice stock primary_category images attributes description_ar description_en colors variants'
     )
     .lean();
+  
+  if (limit) {
+    query = query.limit(limit);
+  }
 
+  const products = await query;
+
+  // Optimize data transformation - only transform what we need
   return products.map((p: any) => {
-    const colors = (p.colors || []).map((color: any) => ({
-      id: color.id,
-      name_ar: color.name_ar,
-      name_en: color.name_en,
-      image: color.image,
-      stock: color.stock,
-      available: color.available,
-    }));
+    // Only transform colors/variants if they exist
+    const colors = p.colors?.length 
+      ? p.colors.map((color: any) => ({
+          id: color.id,
+          name_ar: color.name_ar,
+          name_en: color.name_en,
+          image: color.image,
+          stock: color.stock,
+          available: color.available,
+        }))
+      : [];
 
-    const variants = (p.variants || []).map((variant: any) => ({
-      id: variant.id,
-      name_ar: variant.name_ar,
-      name_en: variant.name_en,
-      price_modifier: variant.price_modifier,
-      stock: variant.stock,
-      attributes: variant.attributes || {},
-    }));
+    const variants = p.variants?.length
+      ? p.variants.map((variant: any) => ({
+          id: variant.id,
+          name_ar: variant.name_ar,
+          name_en: variant.name_en,
+          price_modifier: variant.price_modifier,
+          stock: variant.stock,
+          attributes: variant.attributes || {},
+        }))
+      : [];
 
     return {
       id: p.id,
@@ -54,7 +67,7 @@ async function getProductsFromDb(): Promise<Product[]> {
   });
 }
 
-// Categories: بسيطة، نستدعي الداتا مباشرة بدون كاش عشان أي تعديل يظهر فورًا في النافبار والفلترة
+// Categories: استخدام cache مع revalidate قصير
 async function getCategoriesFromDb(): Promise<Category[]> {
   const { default: connectDB } = await import('@/db/mongoose');
   const CategoryModel = (await import('@/models/Category')).default;
@@ -65,8 +78,18 @@ async function getCategoriesFromDb(): Promise<Category[]> {
     .select('id name_ar name_en slug parentId image description_ar description_en createdAt updatedAt')
     .lean();
 
+  // Optimize category processing - use Map for O(1) lookups
   const mainCategories = categories.filter((c: any) => !c.parentId);
-  const childCategories = categories.filter((c: any) => c.parentId);
+  const childCategoriesByParent = new Map<string, any[]>();
+  
+  categories.forEach((c: any) => {
+    if (c.parentId) {
+      if (!childCategoriesByParent.has(c.parentId)) {
+        childCategoriesByParent.set(c.parentId, []);
+      }
+      childCategoriesByParent.get(c.parentId)!.push(c);
+    }
+  });
 
   return mainCategories.map((main: any) => ({
     id: main.id,
@@ -77,31 +100,55 @@ async function getCategoriesFromDb(): Promise<Category[]> {
     image: main.image,
     description_ar: main.description_ar,
     description_en: main.description_en,
-    children: childCategories
-      .filter((child: any) => child.parentId === main.id)
-      .map((child: any) => ({
-        id: child.id,
-        name_ar: child.name_ar,
-        name_en: child.name_en,
-        slug: child.slug,
-        parentId: child.parentId,
-        image: child.image,
-      })),
+    children: (childCategoriesByParent.get(main.id) || []).map((child: any) => ({
+      id: child.id,
+      name_ar: child.name_ar,
+      name_en: child.name_en,
+      slug: child.slug,
+      parentId: child.parentId,
+      image: child.image,
+    })),
   })) as Category[];
 }
 
-export const getProducts = async (): Promise<Product[]> => {
+export const getProducts = async (limit?: number): Promise<Product[]> => {
   // Server-side: use cached DB access
   if (typeof window === 'undefined') {
     try {
-      return await getProductsFromDb();
-    } catch {
+      // Only use cache if limit is provided and small (to avoid 2MB cache limit)
+      // For unlimited queries, skip cache to avoid 2MB limit error
+      if (limit && limit <= 50) {
+        try {
+          const cachedGetProducts = unstable_cache(
+            async () => getProductsFromDb(limit),
+            [`products-limit-${limit}`],
+            {
+              revalidate: 60, // Cache for 60 seconds
+              tags: ['products'],
+            }
+          );
+          return await cachedGetProducts();
+        } catch (cacheError: any) {
+          // If cache fails (e.g., > 2MB), fallback to direct DB call
+          if (cacheError?.message?.includes('2MB') || cacheError?.message?.includes('can not be cached')) {
+            return await getProductsFromDb(limit);
+          }
+          throw cacheError;
+        }
+      } else {
+        // No cache for unlimited or large queries (too large for cache)
+        return await getProductsFromDb(limit);
+      }
+    } catch (error: any) {
+      // Silently fail and return empty array - don't log to avoid console errors
+      // The error is expected when cache size exceeds 2MB or DB connection fails
       return [];
     }
   } else {
     // Client-side: use API
     try {
-      const res = await fetch('/api/products');
+      const url = limit ? `/api/products?limit=${limit}` : '/api/products';
+      const res = await fetch(url);
       if (res.ok) {
         return await res.json();
       }
@@ -186,7 +233,16 @@ export const getCategories = async (): Promise<Category[]> => {
   // Server-side: use cached DB access
   if (typeof window === 'undefined') {
     try {
-      return await getCategoriesFromDb();
+      // Cache for 120 seconds (categories change less frequently)
+      const cachedGetCategories = unstable_cache(
+        async () => getCategoriesFromDb(),
+        ['categories'],
+        {
+          revalidate: 120, // Cache for 2 minutes
+          tags: ['categories'],
+        }
+      );
+      return await cachedGetCategories();
     } catch {
       return [];
     }

@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import type { Session } from 'next-auth';
-import { Menu, ShoppingCart, ChevronDown, ChevronUp, User, LogOut, Package, LayoutDashboard } from 'lucide-react';
+import { Menu, ShoppingCart, ChevronDown, ChevronUp, User, LogOut, Package, LayoutDashboard, Home, ArrowRight, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -38,10 +39,23 @@ interface NavbarClientProps {
 
 export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarClientProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const itemCount = useCartStore((state) => state.getItemCount());
+  const pathname = usePathname();
+  
+  // Check if we're on home page
+  const isHomePage = pathname === '/ar' || pathname === '/ar/';
+  
+  // For medium screens (1024px - 1250px): show only first category, rest in "More" menu
+  // For larger screens (>1250px): show all categories normally
+  const firstCategory: Category | null = categories.length > 0 ? categories[0] : null;
+  const remainingCategories: Category[] = firstCategory 
+    ? categories.filter((cat: Category) => cat.id !== firstCategory.id)
+    : categories;
 
   useEffect(() => {
     setIsMounted(true);
@@ -68,28 +82,38 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
   };
 
   return (
-    <nav 
-      className="main-navbar sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-      suppressHydrationWarning
-    >
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link href="/ar" className="flex items-center space-x-2 rtl:space-x-reverse">
-            <Image
-              src={logoUrl}
-              alt="Logo"
-              width={180}
-              height={60}
-              className="h-14 w-auto object-contain"
-              priority
-              suppressHydrationWarning
-              unoptimized={logoUrl.startsWith('data:') || logoUrl.startsWith('http://') || logoUrl.startsWith('https://')}
-            />
-          </Link>
+    <>
+      <nav 
+        className="main-navbar sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        suppressHydrationWarning
+      >
+        <div className="container mx-auto px-4">
+          <div className="flex h-16 items-center justify-between">
+            {/* Mobile: Back to Home Button (Left side) */}
+            {!isHomePage && (
+              <Link href="/ar" className="lg:hidden flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors">
+                <ArrowRight className="h-4 w-4 rtl:rotate-0 rotate-180" />
+                <span className="hidden sm:inline">الرئيسية</span>
+              </Link>
+            )}
+            {isHomePage && <div className="lg:hidden w-0"></div>}
+            
+            {/* Logo */}
+            <Link href="/ar" className="flex items-center space-x-2 rtl:space-x-reverse">
+              <Image
+                src={logoUrl}
+                alt="Logo"
+                width={180}
+                height={60}
+                className="h-14 w-auto object-contain"
+                priority
+                suppressHydrationWarning
+                unoptimized={logoUrl.startsWith('data:') || logoUrl.startsWith('http://') || logoUrl.startsWith('https://')}
+              />
+            </Link>
 
-          {/* Desktop Menu - Hidden on mobile */}
-          <div className="hidden lg:flex items-center gap-6">
+            {/* Desktop Menu - Hidden on mobile */}
+            <div className="hidden lg:flex items-center gap-6">
             <Link href="/ar">
               <Button variant="ghost" className="text-base font-medium cursor-pointer">
                 الصفحة الرئيسية
@@ -100,44 +124,158 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
                 كل المنتجات
               </Button>
             </Link>
-            {categories.length > 0 && categories.map((category) => (
-              <Popover
-                key={category.id}
-                open={openPopovers[category.id]}
-                onOpenChange={(open) =>
-                  setOpenPopovers((prev) => ({ ...prev, [category.id]: open }))
-                }
-              >
-                <PopoverTrigger asChild>
+            
+            {/* First category - always show */}
+            {firstCategory && (
+              firstCategory.children && firstCategory.children.length > 0 ? (
+                <Popover
+                  key={firstCategory.id}
+                  open={openPopovers[firstCategory.id]}
+                  onOpenChange={(open) =>
+                    setOpenPopovers((prev) => ({ ...prev, [firstCategory.id]: open }))
+                  }
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="flex items-center gap-1 text-base font-medium relative cursor-pointer"
+                    >
+                      {firstCategory.name_ar}
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56 p-2" align="end" side="bottom" sideOffset={8}>
+                    <div className="flex flex-col gap-1">
+                      {firstCategory.children.map((child) => (
+                        <Link
+                          key={child.id}
+                          href={`/ar/category/${child.slug}`}
+                          className="block px-3 py-2 text-sm rounded-md hover:bg-primary/10 hover:text-primary transition-colors duration-200"
+                          onClick={() =>
+                            setOpenPopovers((prev) => ({
+                              ...prev,
+                              [firstCategory.id]: false,
+                            }))
+                          }
+                        >
+                          {child.name_ar}
+                        </Link>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Link key={firstCategory.id} href={`/ar/category/${firstCategory.slug}`}>
+                  <Button variant="ghost" className="text-base font-medium cursor-pointer">
+                    {firstCategory.name_ar}
+                  </Button>
+                </Link>
+              )
+            )}
+
+            {/* More menu for medium screens (1024px - 1250px) - shows remaining categories */}
+            {remainingCategories.length > 0 && (
+              <DropdownMenu open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="flex items-center gap-1 text-base font-medium relative cursor-pointer"
+                    size="icon"
+                    className="xl:hidden cursor-pointer"
                   >
-                    {category.name_ar}
-                    <ChevronDown className="h-4 w-4" />
+                    <MoreVertical className="h-5 w-5" />
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-56 p-2" align="end" side="bottom" sideOffset={8}>
-                  <div className="flex flex-col gap-1">
-                    {category.children?.map((child) => (
-                      <Link
-                        key={child.id}
-                        href={`/ar/category/${child.slug}`}
-                        className="block px-3 py-2 text-sm rounded-md hover:bg-primary/10 hover:text-primary transition-colors duration-200"
-                        onClick={() =>
-                          setOpenPopovers((prev) => ({
-                            ...prev,
-                            [category.id]: false,
-                          }))
-                        }
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 max-h-[80vh] overflow-y-auto" side="bottom" sideOffset={8}>
+                  {remainingCategories.map((category) => (
+                    <div key={category.id}>
+                      {category.children && category.children.length > 0 ? (
+                        <>
+                          <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                            {category.name_ar}
+                          </div>
+                          {category.children.map((child) => (
+                            <DropdownMenuItem asChild key={child.id}>
+                              <Link
+                                href={`/ar/category/${child.slug}`}
+                                className="flex items-center cursor-pointer rtl:flex-row-reverse"
+                                onClick={() => setIsMoreMenuOpen(false)}
+                              >
+                                <span className="pr-2 rtl:pr-0 rtl:pl-2">•</span>
+                                <span>{child.name_ar}</span>
+                              </Link>
+                            </DropdownMenuItem>
+                          ))}
+                          {remainingCategories.indexOf(category) < remainingCategories.length - 1 && (
+                            <DropdownMenuSeparator />
+                          )}
+                        </>
+                      ) : (
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href={`/ar/category/${category.slug}`}
+                            className="flex items-center cursor-pointer"
+                            onClick={() => setIsMoreMenuOpen(false)}
+                          >
+                            {category.name_ar}
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                    </div>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* All remaining categories for large screens (>1250px) */}
+            <div className="hidden xl:flex items-center gap-6">
+              {remainingCategories.map((category) => (
+                category.children && category.children.length > 0 ? (
+                  <Popover
+                    key={category.id}
+                    open={openPopovers[category.id]}
+                    onOpenChange={(open) =>
+                      setOpenPopovers((prev) => ({ ...prev, [category.id]: open }))
+                    }
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="flex items-center gap-1 text-base font-medium relative cursor-pointer"
                       >
-                        {child.name_ar}
-                      </Link>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            ))}
+                        {category.name_ar}
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-2" align="end" side="bottom" sideOffset={8}>
+                      <div className="flex flex-col gap-1">
+                        {category.children.map((child) => (
+                          <Link
+                            key={child.id}
+                            href={`/ar/category/${child.slug}`}
+                            className="block px-3 py-2 text-sm rounded-md hover:bg-primary/10 hover:text-primary transition-colors duration-200"
+                            onClick={() =>
+                              setOpenPopovers((prev) => ({
+                                ...prev,
+                                [category.id]: false,
+                              }))
+                            }
+                          >
+                            {child.name_ar}
+                          </Link>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <Link key={category.id} href={`/ar/category/${category.slug}`}>
+                    <Button variant="ghost" className="text-base font-medium cursor-pointer">
+                      {category.name_ar}
+                    </Button>
+                  </Link>
+                )
+              ))}
+            </div>
+
             <Link href="/ar/about">
               <Button variant="ghost" className="text-base font-medium cursor-pointer">
                 من نحن
@@ -145,8 +283,8 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
             </Link>
           </div>
 
-          {/* Right side - Auth, Cart and Menu */}
-          <div className="flex items-center gap-4" suppressHydrationWarning>
+          {/* Right side - Auth, Cart and Menu - Hidden on mobile */}
+          <div className="hidden lg:flex items-center gap-4" suppressHydrationWarning>
             {session?.user ? (
               <>
                 <Link href="/ar/cart" className="cursor-pointer">
@@ -229,90 +367,166 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
                 </Link>
               </>
             )}
-
-            {/* Mobile Menu */}
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-                <SheetHeader>
-                  <SheetTitle>القائمة</SheetTitle>
-                </SheetHeader>
-                <div className="flex flex-col gap-4 mt-4">
-                  <Link
-                    href="/ar"
-                    onClick={() => setIsOpen(false)}
-                    className="text-base font-medium transition-colors hover:text-primary duration-200 py-2 border-b pb-4"
-                  >
-                    الصفحة الرئيسية
-                  </Link>
-                  {session?.user && isAdmin && (
-                    <Link
-                      href="/ar/admin"
-                      onClick={() => setIsOpen(false)}
-                      className="text-base font-medium transition-colors hover:text-primary duration-200 py-2 border-b pb-4 flex items-center gap-2"
-                    >
-                      <LayoutDashboard className="h-5 w-5" />
-                      لوحة التحكم
-                    </Link>
-                  )}
-                  <Link
-                    href="/ar/products"
-                    onClick={() => setIsOpen(false)}
-                    className="text-base font-medium transition-colors hover:text-primary duration-200 py-2 border-b pb-4"
-                  >
-                    كل المنتجات
-                  </Link>
-                  <Link
-                    href="/ar/about"
-                    onClick={() => setIsOpen(false)}
-                    className="text-base font-medium transition-colors hover:text-primary duration-200 py-2 border-b pb-4"
-                  >
-                    من نحن
-                  </Link>
-                  {categories.length > 0 && categories.map((category) => (
-                    <div key={category.id} className="border-b pb-2">
-                      <button
-                        onClick={() =>
-                          setExpandedCategories((prev) => ({
-                            ...prev,
-                            [category.id]: !prev[category.id],
-                          }))
-                        }
-                        className="w-full flex items-center justify-between text-base font-semibold py-2 hover:text-primary transition-colors duration-200"
-                      >
-                        <span>{category.name_ar}</span>
-                        {expandedCategories[category.id] ? (
-                          <ChevronUp className="h-5 w-5" />
-                        ) : (
-                          <ChevronDown className="h-5 w-5" />
-                        )}
-                      </button>
-                      {expandedCategories[category.id] && category.children && (
-                        <div className="flex flex-col gap-2 pr-4 mt-2">
-                          {category.children.map((child) => (
-                            <Link
-                              key={child.id}
-                              href={`/ar/category/${child.slug}`}
-                              onClick={() => setIsOpen(false)}
-                              className="text-sm font-medium transition-colors hover:text-primary duration-200 py-1"
-                            >
-                              {child.name_ar}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </SheetContent>
-            </Sheet>
           </div>
         </div>
       </div>
     </nav>
+
+      {/* Mobile Menu Sheet - Accessible from bottom nav */}
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+          <SheetHeader>
+            <SheetTitle>القائمة</SheetTitle>
+          </SheetHeader>
+          <div className="flex flex-col gap-4 mt-4">
+            <Link
+              href="/ar"
+              onClick={() => setIsOpen(false)}
+              className="text-base font-medium transition-colors hover:text-primary duration-200 py-2 border-b pb-4"
+            >
+              الصفحة الرئيسية
+            </Link>
+            {session?.user && isAdmin && (
+              <Link
+                href="/ar/admin"
+                onClick={() => setIsOpen(false)}
+                className="text-base font-medium transition-colors hover:text-primary duration-200 py-2 border-b pb-4 flex items-center gap-2"
+              >
+                <LayoutDashboard className="h-5 w-5" />
+                لوحة التحكم
+              </Link>
+            )}
+            <Link
+              href="/ar/products"
+              onClick={() => setIsOpen(false)}
+              className="text-base font-medium transition-colors hover:text-primary duration-200 py-2 border-b pb-4"
+            >
+              كل المنتجات
+            </Link>
+            <Link
+              href="/ar/about"
+              onClick={() => setIsOpen(false)}
+              className="text-base font-medium transition-colors hover:text-primary duration-200 py-2 border-b pb-4"
+            >
+              من نحن
+            </Link>
+            {categories.length > 0 && categories.map((category) => (
+              <div key={category.id} className="border-b pb-2">
+                <button
+                  onClick={() =>
+                    setExpandedCategories((prev) => ({
+                      ...prev,
+                      [category.id]: !prev[category.id],
+                    }))
+                  }
+                  className="w-full flex items-center justify-between text-base font-semibold py-2 hover:text-primary transition-colors duration-200"
+                >
+                  <span>{category.name_ar}</span>
+                  {expandedCategories[category.id] ? (
+                    <ChevronUp className="h-5 w-5" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5" />
+                  )}
+                </button>
+                {expandedCategories[category.id] && category.children && (
+                  <div className="flex flex-col gap-2 pr-4 mt-2">
+                    {category.children.map((child) => (
+                      <Link
+                        key={child.id}
+                        href={`/ar/category/${child.slug}`}
+                        onClick={() => setIsOpen(false)}
+                        className="text-sm font-medium transition-colors hover:text-primary duration-200 py-1"
+                      >
+                        {child.name_ar}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
+      <div className="flex items-center justify-around h-16 px-2">
+        {/* Home Button */}
+        <Link href="/ar" className="flex flex-col items-center justify-center flex-1 gap-1 py-2">
+          <Home className="h-5 w-5" />
+          <span className="text-xs">الرئيسية</span>
+        </Link>
+
+        {/* Account Button */}
+        {session?.user ? (
+          <div className="flex flex-col items-center justify-center flex-1 gap-1 py-2 relative">
+            <Popover open={isAccountMenuOpen} onOpenChange={setIsAccountMenuOpen}>
+              <PopoverTrigger asChild>
+                <button className="flex flex-col items-center justify-center gap-1">
+                  <User className="h-5 w-5" />
+                  <span className="text-xs">حسابك</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="top" className="w-48 mb-2 p-2" align="center">
+                <div className="flex flex-col gap-1">
+                  <Link
+                    href="/ar/orders"
+                    onClick={() => setIsAccountMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-primary/10 hover:text-primary transition-colors duration-200 rtl:flex-row-reverse"
+                  >
+                    <Package className="h-4 w-4" />
+                    <span>طلباتي</span>
+                  </Link>
+                  <Link
+                    href="/ar/cart"
+                    onClick={() => setIsAccountMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-primary/10 hover:text-primary transition-colors duration-200 rtl:flex-row-reverse"
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    <span>السلة</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setIsAccountMenuOpen(false);
+                      handleSignOut();
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-primary/10 hover:text-primary transition-colors duration-200 rtl:flex-row-reverse text-right w-full"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>تسجيل الخروج</span>
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        ) : (
+          <Link href="/ar/auth/signin" className="flex flex-col items-center justify-center flex-1 gap-1 py-2">
+            <User className="h-5 w-5" />
+            <span className="text-xs">حسابك</span>
+          </Link>
+        )}
+
+        {/* Cart Button */}
+        <Link href="/ar/cart" className="flex flex-col items-center justify-center flex-1 gap-1 py-2 relative">
+          <ShoppingCart className="h-5 w-5" />
+          {isMounted && itemCount > 0 && (
+            <span className="absolute top-1 left-1/2 -translate-x-1/2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+              {itemCount}
+            </span>
+          )}
+          <span className="text-xs">العربة</span>
+        </Link>
+
+        {/* Menu Button */}
+        <button
+          onClick={() => setIsOpen(true)}
+          className="flex flex-col items-center justify-center flex-1 gap-1 py-2"
+        >
+          <Menu className="h-5 w-5" />
+          <span className="text-xs">القائمة</span>
+        </button>
+      </div>
+    </nav>
+    </>
   );
 }
