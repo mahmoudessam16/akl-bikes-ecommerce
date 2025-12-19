@@ -3,6 +3,74 @@ import { auth } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/db/mongoose';
 import Product from '@/models/Product';
 
+// GET product by id
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'يجب تسجيل الدخول' },
+        { status: 401 }
+      );
+    }
+    
+    const { id } = await params;
+    
+    await connectDB();
+    
+    const product = await Product.findOne({ id }).lean();
+    
+    if (!product) {
+      return NextResponse.json(
+        { error: 'المنتج غير موجود' },
+        { status: 404 }
+      );
+    }
+    
+    // Transform product data
+    const colors = (product.colors || []).map((color: any) => ({
+      id: color.id,
+      name_ar: color.name_ar,
+      name_en: color.name_en,
+      image: color.image,
+      stock: color.stock,
+      available: color.available,
+    }));
+    
+    const transformedProduct = {
+      id: product.id,
+      sku: product.sku,
+      title_ar: product.title_ar,
+      title_en: product.title_en,
+      slug: product.slug,
+      price: product.price,
+      oldPrice: (product as any).oldPrice,
+      stock: product.stock,
+      primary_category: product.primary_category,
+      images: product.images || [],
+      attributes: product.attributes || {},
+      description_ar: product.description_ar,
+      description_en: product.description_en,
+      colors,
+      variants: product.variants || [],
+    };
+    
+    return NextResponse.json(
+      { product: transformedProduct },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'حدث خطأ أثناء جلب المنتج' },
+      { status: 500 }
+    );
+  }
+}
+
 // PUT update product
 export async function PUT(
   request: NextRequest,

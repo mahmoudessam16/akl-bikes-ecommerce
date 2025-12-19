@@ -26,9 +26,9 @@ export function HomeClient({ featuredProducts, featuredCategories }: HomeClientP
         <div className="container mx-auto px-4 h-full flex items-center relative z-10">
           <div className="max-w-2xl">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 text-black">
-              عقل للدراجات الهوائية
+            <span className="text-[#FF6B35]">عقل</span> للدراجات الهوائية 
             </h1>
-            <p className="text-lg md:text-xl text-black mb-6">
+            <p className="text-lg md:text-xl mb-6 text-black font-bold">
               اكتشف مجموعتنا الواسعة من الدراجات والإكسسوارات عالية الجودة
             </p>
             <Link href="/ar/products">
@@ -39,7 +39,7 @@ export function HomeClient({ featuredProducts, featuredCategories }: HomeClientP
           </div>
         </div>
         {/* Hero background image */}
-        <div className="absolute inset-0 opacity-50">
+        <div className="absolute inset-0 opacity-30">
           <Image
             src="/imgs/hero-bg.png"
             alt="Hero background"

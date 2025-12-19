@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import type { Session } from 'next-auth';
-import { Menu, ShoppingCart, ChevronDown, ChevronUp, User, LogOut, Package, LayoutDashboard, Home, ArrowRight, MoreVertical } from 'lucide-react';
+import { Menu, ShoppingCart, ChevronDown, ChevronUp, User, LogOut, Package, LayoutDashboard, Home, ArrowRight, MoreVertical, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -28,7 +28,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useCartStore } from '@/lib/stores/cart-store';
-import type { Category } from '@/types';
+import type { Category, Product } from '@/types';
+import { Input } from '@/components/ui/input';
 
 interface NavbarClientProps {
   categories: Category[];
@@ -44,6 +45,11 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
   const [isMounted, setIsMounted] = useState(false);
   const [openPopovers, setOpenPopovers] = useState<Record<string, boolean>>({});
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const itemCount = useCartStore((state) => state.getItemCount());
   const pathname = usePathname();
   
@@ -77,6 +83,54 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
     };
   }, []);
 
+  // Search functionality with debounce
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearchOpen(false);
+      return;
+    }
+
+    // Debounce: wait 500ms after user stops typing
+    const searchTimeout = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(`/api/products/search?q=${encodeURIComponent(searchQuery)}&limit=5`);
+        const data = await res.json();
+        setSearchResults(data.products || []);
+        setIsSearchOpen(true);
+      } catch (error) {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500); // Increased debounce time to 500ms
+
+    return () => clearTimeout(searchTimeout);
+  }, [searchQuery]);
+
+  // Close search dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node) &&
+        isSearchOpen
+      ) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    // Add event listener when search is open
+    if (isSearchOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchOpen]);
+
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/ar' });
   };
@@ -99,7 +153,7 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
             {isHomePage && <div className="lg:hidden w-0"></div>}
             
             {/* Logo */}
-            <Link href="/ar" className="flex items-center space-x-2 rtl:space-x-reverse">
+            <Link href="/ar" className="flex items-center space-x-2 rtl:space-x-reverse flex-shrink-0">
               <Image
                 src={logoUrl}
                 alt="Logo"
@@ -111,6 +165,92 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
                 unoptimized={logoUrl.startsWith('data:') || logoUrl.startsWith('http://') || logoUrl.startsWith('https://')}
               />
             </Link>
+
+            {/* Search Bar - Visible on screens up to 1024px */}
+            <div className="flex lg:hidden flex-1 max-w-md mx-4 relative" ref={searchContainerRef}>
+              <div className="relative w-full">
+                <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground rtl:right-auto rtl:left-2" />
+                <Input
+                  type="text"
+                  placeholder="ابحث عن منتج..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => searchQuery && setIsSearchOpen(true)}
+                  className="pr-7 rtl:pl-8 h-9 text-sm"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSearchResults([]);
+                      setIsSearchOpen(false);
+                    }}
+                    className="cursor-pointer absolute left-2 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-2"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                )}
+                
+                {/* Search Results Dropdown */}
+                {isSearchOpen && (searchResults.length > 0 || isSearching) && (
+                  <div className="absolute top-full left-0 sm:right-0 mt-2 bg-background border w-[250px] sm:w-full rounded-lg shadow-lg z-50 max-h-[400px] overflow-y-auto">
+                    {isSearching ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        جاري البحث...
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <>
+                        {searchResults.map((product) => (
+                          <Link
+                            key={product.id}
+                            href={`/ar/product/${product.slug}`}
+                            onClick={() => {
+                              setSearchQuery('');
+                              setSearchResults([]);
+                              setIsSearchOpen(false);
+                            }}
+                            className="flex items-center gap-3 p-3 hover:bg-muted transition-colors border-b last:border-b-0"
+                          >
+                            {product.images && product.images.length > 0 && (
+                              <div className="relative w-12 h-12 flex-shrink-0 rounded overflow-hidden bg-muted">
+                                <Image
+                                  src={product.images[0]}
+                                  alt={product.title_ar}
+                                  fill
+                                  className="object-cover"
+                                  sizes="48px"
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{product.title_ar}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {product.price.toLocaleString('ar-EG')} جنيه
+                              </p>
+                            </div>
+                          </Link>
+                        ))}
+                        <Link
+                          href={`/ar/products?q=${encodeURIComponent(searchQuery)}`}
+                          onClick={() => {
+                            setSearchQuery('');
+                            setSearchResults([]);
+                            setIsSearchOpen(false);
+                          }}
+                          className="block p-3 text-center text-sm font-medium text-primary hover:bg-muted border-t"
+                        >
+                          عرض جميع النتائج
+                        </Link>
+                      </>
+                    ) : (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        لا توجد نتائج
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Desktop Menu - Hidden on mobile */}
             <div className="hidden lg:flex items-center gap-6">
@@ -516,6 +656,18 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
           )}
           <span className="text-xs">العربة</span>
         </Link>
+
+        {/* Search Button - Mobile only */}
+        <button
+          onClick={() => {
+            // Navigate to products page with search
+            window.location.href = '/ar/products';
+          }}
+          className="flex flex-col items-center justify-center flex-1 gap-1 py-2"
+        >
+          <Search className="h-5 w-5" />
+          <span className="text-xs">بحث</span>
+        </button>
 
         {/* Menu Button */}
         <button

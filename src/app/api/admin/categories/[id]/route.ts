@@ -3,6 +3,46 @@ import { auth } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/db/mongoose';
 import Category from '@/models/Category';
 
+// GET category by id
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'يجب تسجيل الدخول' },
+        { status: 401 }
+      );
+    }
+    
+    const { id } = await params;
+    
+    await connectDB();
+    
+    const category = await Category.findOne({ id }).lean();
+    
+    if (!category) {
+      return NextResponse.json(
+        { error: 'الفئة غير موجودة' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json(
+      { category },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'حدث خطأ أثناء جلب الفئة' },
+      { status: 500 }
+    );
+  }
+}
+
 // PUT update category
 export async function PUT(
   request: NextRequest,

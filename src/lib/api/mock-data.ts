@@ -4,16 +4,19 @@ import { unstable_cache } from 'next/cache';
 // --- Internal helpers (server-only) ---
 
 // Products: استخدام cache مع revalidate قصير للصفحة الرئيسية
-async function getProductsFromDb(limit?: number): Promise<Product[]> {
+async function getProductsFromDb(limit?: number, lightweight: boolean = false): Promise<Product[]> {
   const { default: connectDB } = await import('@/db/mongoose');
   const ProductModel = (await import('@/models/Product')).default;
   await connectDB();
 
+  // For homepage/lightweight queries, select fewer fields to reduce cache size
+  const selectFields = lightweight
+    ? 'id sku title_ar slug price oldPrice stock primary_category images'
+    : 'id sku title_ar title_en slug price oldPrice stock primary_category images attributes description_ar description_en colors variants';
+
   let query = ProductModel.find()
     .sort({ createdAt: -1 })
-    .select(
-      'id sku title_ar title_en slug price oldPrice stock primary_category images attributes description_ar description_en colors variants'
-    )
+    .select(selectFields)
     .lean();
   
   if (limit) {
@@ -24,6 +27,27 @@ async function getProductsFromDb(limit?: number): Promise<Product[]> {
 
   // Optimize data transformation - only transform what we need
   return products.map((p: any) => {
+    // For lightweight queries, skip colors/variants/descriptions
+    if (lightweight) {
+      return {
+        id: p.id,
+        sku: p.sku,
+        title_ar: p.title_ar,
+        title_en: p.title_ar, // Fallback to title_ar
+        slug: p.slug,
+        price: p.price,
+        oldPrice: p.oldPrice,
+        stock: p.stock,
+        primary_category: p.primary_category,
+        images: p.images || [],
+        attributes: {},
+        description_ar: '',
+        description_en: '',
+        variants: [],
+        colors: [],
+      } as Product;
+    }
+
     // Only transform colors/variants if they exist
     const colors = p.colors?.length 
       ? p.colors.map((color: any) => ({
@@ -111,17 +135,17 @@ async function getCategoriesFromDb(): Promise<Category[]> {
   })) as Category[];
 }
 
-export const getProducts = async (limit?: number): Promise<Product[]> => {
+export const getProducts = async (limit?: number, lightweight: boolean = false): Promise<Product[]> => {
   // Server-side: use cached DB access
   if (typeof window === 'undefined') {
     try {
       // Only use cache if limit is provided and small (to avoid 2MB cache limit)
-      // For unlimited queries, skip cache to avoid 2MB limit error
+      // Use lightweight mode for homepage to reduce cache size
       if (limit && limit <= 50) {
         try {
           const cachedGetProducts = unstable_cache(
-            async () => getProductsFromDb(limit),
-            [`products-limit-${limit}`],
+            async () => getProductsFromDb(limit, lightweight),
+            [`products-limit-${limit}-${lightweight ? 'light' : 'full'}`],
             {
               revalidate: 60, // Cache for 60 seconds
               tags: ['products'],
@@ -130,14 +154,16 @@ export const getProducts = async (limit?: number): Promise<Product[]> => {
           return await cachedGetProducts();
         } catch (cacheError: any) {
           // If cache fails (e.g., > 2MB), fallback to direct DB call
+          // Silently catch to avoid console errors
           if (cacheError?.message?.includes('2MB') || cacheError?.message?.includes('can not be cached')) {
-            return await getProductsFromDb(limit);
+            return await getProductsFromDb(limit, lightweight);
           }
-          throw cacheError;
+          // For other errors, also fallback silently
+          return await getProductsFromDb(limit, lightweight);
         }
       } else {
         // No cache for unlimited or large queries (too large for cache)
-        return await getProductsFromDb(limit);
+        return await getProductsFromDb(limit, lightweight);
       }
     } catch (error: any) {
       // Silently fail and return empty array - don't log to avoid console errors

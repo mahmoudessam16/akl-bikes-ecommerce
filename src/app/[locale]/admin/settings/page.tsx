@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const [imageSource, setImageSource] = useState<'url' | 'file'>('url');
   const [imagePreview, setImagePreview] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -69,9 +70,9 @@ export default function SettingsPage() {
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('حجم الملف كبير جداً. الحد الأقصى 5MB');
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('حجم الملف كبير جداً. الحد الأقصى 10MB');
       return;
     }
 
@@ -82,7 +83,7 @@ export default function SettingsPage() {
     reader.onloadend = () => {
       const base64String = reader.result as string;
       setImagePreview(base64String);
-      setLogoUrl(base64String);
+      // Don't set logoUrl yet - will be set after upload
     };
     reader.readAsDataURL(file);
   };
@@ -117,14 +118,87 @@ export default function SettingsPage() {
     return false;
   };
 
-  const handleSave = async () => {
-    if (!logoUrl || !logoUrl.trim()) {
-      toast.error('الرجاء إدخال رابط أو رفع صورة للوجو');
-      return;
+  const uploadImageToCloudinary = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', 'bike-store/settings');
+
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'فشل رفع الصورة');
     }
 
-    if (!validateUrl(logoUrl)) {
-      toast.error('الرجاء إدخال رابط صحيح للوجو (يجب أن يبدأ بـ http:// أو https:// أو /)');
+    const data = await res.json();
+    return data.url;
+  };
+
+  const uploadUrlToCloudinary = async (url: string): Promise<string> => {
+    // Skip if already Cloudinary URL
+    if (url.includes('res.cloudinary.com')) {
+      return url;
+    }
+
+    // Skip if it's a local path
+    if (url.startsWith('/')) {
+      return url;
+    }
+
+    const res = await fetch('/api/upload', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, folder: 'bike-store/settings' }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'فشل رفع الصورة من الرابط');
+    }
+
+    const data = await res.json();
+    return data.url;
+  };
+
+  const handleSave = async () => {
+    let finalLogoUrl = logoUrl;
+
+    // Upload image if it's a file
+    if (imageSource === 'file' && selectedFile) {
+      setUploading(true);
+      try {
+        finalLogoUrl = await uploadImageToCloudinary(selectedFile);
+        setLogoUrl(finalLogoUrl);
+        setImagePreview(finalLogoUrl);
+        toast.success('تم رفع الصورة بنجاح');
+      } catch (error: any) {
+        toast.error(error.message || 'فشل رفع الصورة');
+        setUploading(false);
+        return;
+      } finally {
+        setUploading(false);
+      }
+    } else if (imageSource === 'url' && logoUrl && logoUrl.trim() && !logoUrl.startsWith('/') && !logoUrl.includes('res.cloudinary.com')) {
+      // Upload URL to Cloudinary if it's not already Cloudinary or local path
+      setUploading(true);
+      try {
+        finalLogoUrl = await uploadUrlToCloudinary(logoUrl.trim());
+        setLogoUrl(finalLogoUrl);
+        setImagePreview(finalLogoUrl);
+      } catch (error: any) {
+        toast.error(error.message || 'فشل رفع الصورة من الرابط');
+        setUploading(false);
+        return;
+      } finally {
+        setUploading(false);
+      }
+    }
+
+    if (!finalLogoUrl || !finalLogoUrl.trim()) {
+      toast.error('الرجاء إدخال رابط أو رفع صورة للوجو');
       return;
     }
 
@@ -152,7 +226,7 @@ export default function SettingsPage() {
     try {
       // Save all settings
       const settings = [
-        { key: 'logo_url', value: logoUrl.trim() },
+        { key: 'logo_url', value: finalLogoUrl.trim() },
         { key: 'phone', value: phone.trim() },
         { key: 'email', value: email.trim() },
         { key: 'address', value: address.trim() },
@@ -274,7 +348,7 @@ export default function SettingsPage() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  الحد الأقصى لحجم الملف: 5MB. الصيغ المدعومة: PNG, JPG, JPEG, GIF, WebP
+                  الحد الأقصى لحجم الملف: 10MB. الصيغ المدعومة: PNG, JPG, JPEG, GIF, WebP - سيتم رفعها على Cloudinary
                 </p>
               </div>
             </TabsContent>
@@ -409,8 +483,13 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <Button onClick={handleSave} disabled={saving} className="gap-2 w-full sm:w-auto">
-            {saving ? (
+          <Button onClick={handleSave} disabled={saving || uploading} className="gap-2 w-full sm:w-auto">
+            {uploading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                جاري رفع الصورة...
+              </>
+            ) : saving ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
                 جاري الحفظ...

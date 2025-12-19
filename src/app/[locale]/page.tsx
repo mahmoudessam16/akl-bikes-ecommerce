@@ -30,8 +30,9 @@ export const revalidate = 300;
 
 export default async function Home() {
   // Fetch only what we need - much faster!
+  // Use lightweight mode to reduce cache size and avoid 2MB limit
   const [products, categories] = await Promise.all([
-    getProducts(8), // Only fetch 8 products for homepage
+    getProducts(8, true), // Only fetch 8 products for homepage with lightweight mode
     getCategories(), // Categories are cached and small
   ]);
   
