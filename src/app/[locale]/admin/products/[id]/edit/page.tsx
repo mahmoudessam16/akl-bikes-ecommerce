@@ -194,9 +194,9 @@ export default function EditProductPage() {
     setColorUploading(true);
     try {
       let finalImageUrl = colorImage;
+      const fileInput = document.getElementById('color-image-file') as HTMLInputElement | null;
 
       if (colorImageSource === 'file') {
-        const fileInput = document.getElementById('color-image-file') as HTMLInputElement;
         const file = fileInput?.files?.[0];
         if (file) {
           finalImageUrl = await uploadImageToCloudinary(file);
