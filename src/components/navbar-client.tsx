@@ -447,7 +447,13 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
                           alt={session.user.name || 'User'}
                           width={32}
                           height={32}
-                          className="rounded-full cursor-pointer"
+                          className="rounded-full cursor-pointer object-cover"
+                          unoptimized={
+                            !!session.user.image &&
+                            (session.user.image.startsWith('data:') ||
+                              session.user.image.startsWith('http://') ||
+                              session.user.image.startsWith('https://'))
+                          }
                         />
                       ) : (
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground cursor-pointer">
@@ -592,7 +598,7 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
       <div className="flex items-center justify-around h-16 px-2">
         {/* Home Button */}
-        <Link href="/ar" className="flex flex-col items-center justify-center flex-1 gap-1 py-2">
+        <Link href="/ar" className="flex flex-col items-center justify-center flex-1 gap-1 py-2 hover:bg-primary/10 hover:text-primary hover:rounded-lg p-2 cursor-pointer">
           <Home className="h-5 w-5" />
           <span className="text-xs">الرئيسية</span>
         </Link>
@@ -602,13 +608,46 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
           <div className="flex flex-col items-center justify-center flex-1 gap-1 py-2 relative">
             <Popover open={isAccountMenuOpen} onOpenChange={setIsAccountMenuOpen}>
               <PopoverTrigger asChild>
-                <button className="flex flex-col items-center justify-center gap-1">
-                  <User className="h-5 w-5" />
+                <button className="flex flex-col items-center justify-center gap-1 hover:bg-primary/10 hover:text-primary hover:rounded-lg cursor-pointer p-2">
+                  {session.user.image ? (
+                    <div className="relative h-8 w-8">
+                      <Image
+                        src={session.user.image}
+                        alt={session.user.name || 'User'}
+                        fill
+                        className="rounded-full cursor-pointer object-cover"
+                        unoptimized={
+                          !!session.user.image &&
+                          (session.user.image.startsWith('data:') ||
+                            session.user.image.startsWith('http://') ||
+                            session.user.image.startsWith('https://'))
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground cursor-pointer">
+                      <User className="h-4 w-4 cursor-pointer" />
+                    </div>
+                  )}
                   <span className="text-xs">حسابك</span>
                 </button>
               </PopoverTrigger>
-              <PopoverContent side="top" className="w-48 mb-2 p-2" align="center">
+              <PopoverContent side="top" className="w-56 mb-2 p-2" align="center">
                 <div className="flex flex-col gap-1">
+                  <div className="px-2 py-1.5 border-b mb-1 text-right">
+                    <p className="text-sm font-medium truncate">{session.user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
+                  </div>
+                  {isAdmin && (
+                    <Link
+                      href="/ar/admin"
+                      onClick={() => setIsAccountMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-primary/10 hover:text-primary transition-colors duration-200 rtl:flex-row-reverse"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      <span>لوحة التحكم</span>
+                    </Link>
+                  )}
                   <Link
                     href="/ar/orders"
                     onClick={() => setIsAccountMenuOpen(false)}
@@ -623,7 +662,7 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
                     className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-primary/10 hover:text-primary transition-colors duration-200 rtl:flex-row-reverse"
                   >
                     <ShoppingCart className="h-4 w-4" />
-                    <span>السلة</span>
+                    <span>سلة التسوق</span>
                   </Link>
                   <button
                     onClick={() => {
@@ -647,7 +686,7 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
         )}
 
         {/* Cart Button */}
-        <Link href="/ar/cart" className="flex flex-col items-center justify-center flex-1 gap-1 py-2 relative">
+        <Link href="/ar/cart" className="flex flex-col items-center justify-center flex-1 gap-1 py-2 relative hover:bg-primary/10 hover:text-primary hover:rounded-lg p-2">
           <ShoppingCart className="h-5 w-5" />
           {isMounted && itemCount > 0 && (
             <span className="absolute top-1 left-1/2 -translate-x-1/2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
@@ -663,7 +702,7 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
             // Navigate to products page with search
             window.location.href = '/ar/products';
           }}
-          className="flex flex-col items-center justify-center flex-1 gap-1 py-2"
+          className="flex flex-col items-center justify-center flex-1 gap-1 py-2 hover:bg-primary/10 hover:text-primary hover:rounded-lg p-2 cursor-pointer"
         >
           <Search className="h-5 w-5" />
           <span className="text-xs">بحث</span>
@@ -672,7 +711,7 @@ export function NavbarClient({ categories, logoUrl, session, isAdmin }: NavbarCl
         {/* Menu Button */}
         <button
           onClick={() => setIsOpen(true)}
-          className="flex flex-col items-center justify-center flex-1 gap-1 py-2"
+          className="flex flex-col items-center justify-center flex-1 gap-1 py-2 hover:bg-primary/10 hover:text-primary hover:rounded-lg p-2 cursor-pointer"
         >
           <Menu className="h-5 w-5" />
           <span className="text-xs">القائمة</span>

@@ -3,7 +3,6 @@ import { auth } from '@/app/api/auth/[...nextauth]/route';
 import { NavbarClient } from './navbar-client';
 import Settings from '@/models/Settings';
 import connectDB from '@/db/mongoose';
-import type { Category } from '@/types';
 
 async function getLogoUrl(): Promise<string> {
   try {

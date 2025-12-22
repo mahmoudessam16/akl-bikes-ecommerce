@@ -20,10 +20,10 @@ export async function sendVerificationEmail(email: string, code: string) {
   const mailOptions = {
     from: process.env.SMTP_FROM || process.env.SMTP_USER,
     to: email,
-    subject: 'رمز التحقق من البريد الإلكتروني - متجر الدراجات',
+    subject: 'رمز التحقق من البريد الإلكتروني - متجر عقل الدراجات',
     html: `
       <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #333; text-align: center;">مرحباً بك في متجر الدراجات</h2>
+        <h2 style="color: #333; text-align: center;">مرحباً بك في متجر عقل الدراجات</h2>
         <p style="color: #666; font-size: 16px;">شكراً لك على التسجيل. يرجى استخدام الرمز التالي للتحقق من بريدك الإلكتروني:</p>
         <div style="background-color: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
           <h1 style="color: #007bff; font-size: 32px; letter-spacing: 8px; margin: 0;">${code}</h1>
