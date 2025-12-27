@@ -5,134 +5,158 @@ import { unstable_cache } from 'next/cache';
 
 // Products: استخدام cache مع revalidate قصير للصفحة الرئيسية
 async function getProductsFromDb(limit?: number, lightweight: boolean = false): Promise<Product[]> {
-  const { default: connectDB } = await import('@/db/mongoose');
-  const ProductModel = (await import('@/models/Product')).default;
-  await connectDB();
+  try {
+    const { default: connectDB } = await import('@/db/mongoose');
+    const ProductModel = (await import('@/models/Product')).default;
+    
+    // Add timeout for connection
+    const connectPromise = connectDB();
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Connection timeout')), 10000);
+    });
+    
+    await Promise.race([connectPromise, timeoutPromise]);
 
-  // For homepage/lightweight queries, select fewer fields to reduce cache size
-  const selectFields = lightweight
-    ? 'id sku title_ar slug price oldPrice stock primary_category images'
-    : 'id sku title_ar title_en slug price oldPrice stock primary_category images attributes description_ar description_en colors variants';
+    // For homepage/lightweight queries, select fewer fields to reduce cache size
+    const selectFields = lightweight
+      ? 'id sku title_ar slug price oldPrice stock primary_category images'
+      : 'id sku title_ar title_en slug price oldPrice stock primary_category images attributes description_ar description_en colors variants';
 
-  let query = ProductModel.find()
-    .sort({ createdAt: -1 })
-    .select(selectFields)
-    .lean();
-  
-  if (limit) {
-    query = query.limit(limit);
-  }
+    let query = ProductModel.find()
+      .sort({ createdAt: -1 })
+      .select(selectFields)
+      .lean();
+    
+    if (limit) {
+      query = query.limit(limit);
+    }
 
-  const products = await query;
+    const products = await query;
 
-  // Optimize data transformation - only transform what we need
-  return products.map((p: any) => {
-    // For lightweight queries, skip colors/variants/descriptions
-    if (lightweight) {
+    // Optimize data transformation - only transform what we need
+    return products.map((p: any) => {
+      // For lightweight queries, skip colors/variants/descriptions
+      if (lightweight) {
+        return {
+          id: p.id,
+          sku: p.sku,
+          title_ar: p.title_ar,
+          title_en: p.title_ar, // Fallback to title_ar
+          slug: p.slug,
+          price: p.price,
+          oldPrice: p.oldPrice,
+          stock: p.stock,
+          primary_category: p.primary_category,
+          images: p.images || [],
+          attributes: {},
+          description_ar: '',
+          description_en: '',
+          variants: [],
+          colors: [],
+        } as Product;
+      }
+
+      // Only transform colors/variants if they exist
+      const colors = p.colors?.length 
+        ? p.colors.map((color: any) => ({
+            id: color.id,
+            name_ar: color.name_ar,
+            name_en: color.name_en,
+            image: color.image,
+            stock: color.stock,
+            available: color.available,
+          }))
+        : [];
+
+      const variants = p.variants?.length
+        ? p.variants.map((variant: any) => ({
+            id: variant.id,
+            name_ar: variant.name_ar,
+            name_en: variant.name_en,
+            price_modifier: variant.price_modifier,
+            stock: variant.stock,
+            attributes: variant.attributes || {},
+          }))
+        : [];
+
       return {
         id: p.id,
         sku: p.sku,
         title_ar: p.title_ar,
-        title_en: p.title_ar, // Fallback to title_ar
+        title_en: p.title_en,
         slug: p.slug,
         price: p.price,
         oldPrice: p.oldPrice,
         stock: p.stock,
         primary_category: p.primary_category,
         images: p.images || [],
-        attributes: {},
-        description_ar: '',
-        description_en: '',
-        variants: [],
-        colors: [],
+        attributes: p.attributes || {},
+        description_ar: p.description_ar,
+        description_en: p.description_en,
+        variants,
+        colors,
       } as Product;
-    }
-
-    // Only transform colors/variants if they exist
-    const colors = p.colors?.length 
-      ? p.colors.map((color: any) => ({
-          id: color.id,
-          name_ar: color.name_ar,
-          name_en: color.name_en,
-          image: color.image,
-          stock: color.stock,
-          available: color.available,
-        }))
-      : [];
-
-    const variants = p.variants?.length
-      ? p.variants.map((variant: any) => ({
-          id: variant.id,
-          name_ar: variant.name_ar,
-          name_en: variant.name_en,
-          price_modifier: variant.price_modifier,
-          stock: variant.stock,
-          attributes: variant.attributes || {},
-        }))
-      : [];
-
-    return {
-      id: p.id,
-      sku: p.sku,
-      title_ar: p.title_ar,
-      title_en: p.title_en,
-      slug: p.slug,
-      price: p.price,
-      oldPrice: p.oldPrice,
-      stock: p.stock,
-      primary_category: p.primary_category,
-      images: p.images || [],
-      attributes: p.attributes || {},
-      description_ar: p.description_ar,
-      description_en: p.description_en,
-      variants,
-      colors,
-    } as Product;
-  });
+    });
+  } catch (error) {
+    // Return empty array if DB connection fails during build
+    return [];
+  }
 }
 
 // Categories: استخدام cache مع revalidate قصير
 async function getCategoriesFromDb(): Promise<Category[]> {
-  const { default: connectDB } = await import('@/db/mongoose');
-  const CategoryModel = (await import('@/models/Category')).default;
-  await connectDB();
+  try {
+    const { default: connectDB } = await import('@/db/mongoose');
+    const CategoryModel = (await import('@/models/Category')).default;
+    
+    // Add timeout for connection
+    const connectPromise = connectDB();
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Connection timeout')), 10000);
+    });
+    
+    await Promise.race([connectPromise, timeoutPromise]);
 
-  const categories = await CategoryModel.find()
-    .sort({ createdAt: -1 })
-    .select('id name_ar name_en slug parentId image description_ar description_en createdAt updatedAt')
-    .lean();
+    const categories = await CategoryModel.find()
+      .sort({ createdAt: -1 })
+      .select('id name_ar name_en slug parentId image description_ar description_en createdAt updatedAt')
+      .lean();
 
-  // Optimize category processing - use Map for O(1) lookups
-  const mainCategories = categories.filter((c: any) => !c.parentId);
-  const childCategoriesByParent = new Map<string, any[]>();
-  
-  categories.forEach((c: any) => {
-    if (c.parentId) {
-      if (!childCategoriesByParent.has(c.parentId)) {
-        childCategoriesByParent.set(c.parentId, []);
+    // Optimize category processing - use Map for O(1) lookups
+    const mainCategories = categories.filter((c: any) => !c.parentId);
+    const childCategoriesByParent = new Map<string, any[]>();
+    
+    categories.forEach((c: any) => {
+      if (c.parentId) {
+        if (!childCategoriesByParent.has(c.parentId)) {
+          childCategoriesByParent.set(c.parentId, []);
+        }
+        childCategoriesByParent.get(c.parentId)!.push(c);
       }
-      childCategoriesByParent.get(c.parentId)!.push(c);
-    }
-  });
+    });
 
-  return mainCategories.map((main: any) => ({
-    id: main.id,
-    name_ar: main.name_ar,
-    name_en: main.name_en,
-    slug: main.slug,
-    parentId: main.parentId,
-    image: main.image,
-    description_ar: main.description_ar,
-    description_en: main.description_en,
-    children: (childCategoriesByParent.get(main.id) || []).map((child: any) => ({
-      id: child.id,
-      name_ar: child.name_ar,
-      name_en: child.name_en,
-      slug: child.slug,
-      parentId: child.parentId,
-      image: child.image,
-    })),
-  })) as Category[];
+    return mainCategories.map((main: any) => ({
+      id: main.id,
+      name_ar: main.name_ar,
+      name_en: main.name_en,
+      slug: main.slug,
+      parentId: main.parentId,
+      image: main.image,
+      description_ar: main.description_ar,
+      description_en: main.description_en,
+      children: (childCategoriesByParent.get(main.id) || []).map((child: any) => ({
+        id: child.id,
+        name_ar: child.name_ar,
+        name_en: child.name_en,
+        slug: child.slug,
+        parentId: child.parentId,
+        image: child.image,
+      })),
+    })) as Category[];
+  } catch (error) {
+    // Return empty array if DB connection fails during build
+    return [];
+  }
 }
 
 export const getProducts = async (limit?: number, lightweight: boolean = false): Promise<Product[]> => {

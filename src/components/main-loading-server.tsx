@@ -4,7 +4,14 @@ import connectDB from '@/db/mongoose';
 
 async function getLogoUrl(): Promise<string> {
   try {
-    await connectDB();
+    // Add timeout for connection
+    const connectPromise = connectDB();
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Connection timeout')), 10000);
+    });
+    
+    await Promise.race([connectPromise, timeoutPromise]);
+    
     const setting = await Settings.findOne({ key: 'logo_url' });
     return setting?.value || '/imgs/logo-light.PNG';
   } catch (error) {

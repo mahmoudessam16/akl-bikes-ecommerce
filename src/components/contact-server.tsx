@@ -5,7 +5,14 @@ import { MapPin } from 'lucide-react';
 
 async function getContactInfo() {
   try {
-    await connectDB();
+    // Add timeout for connection
+    const connectPromise = connectDB();
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Connection timeout')), 10000);
+    });
+    
+    await Promise.race([connectPromise, timeoutPromise]);
+    
     const settings = await Settings.find({
       key: { $in: ['phone', 'email', 'address', 'working_hours', 'google_maps_url'] }
     }).lean();
